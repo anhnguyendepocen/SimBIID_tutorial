@@ -83,7 +83,7 @@ simBS <- function(pars, data, tols, u, model) {
 }
 ```
 
-> **Note**: To speed things up here we will not use the `run()` function, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function. The `run()` function does all this internally, but here we will do it in two stages.
+> **Note**: To speed things up here we will not use the `run()` function, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function. The `run()` function does all this internally, but here we will do it in two stages. Also, the `run()` function requires that the parameters and initial states are added as `data.frame` objects (for consistency), whereas `ABCSMC` requires that the function works with `pars`, `data` and `u` as **vectors**, so the use of `run()` within this function would require us to convert vectors to data frames within the `simBS` function, which is inefficient.
 
 Hence, to specify and compile the model we can run:
 
@@ -99,9 +99,9 @@ model
 
 You can see that the compiled model is an R `function` that takes four arguments, `pars`, `tstart`, `tstop` and `u`. Convenient eh?
 
-> **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()` (you could use `SimInf` here).
+> **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()` (you could use `SimInf` here for example).
 
-This function therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. The final things we need to specify are the number of particles (50 say), the initial states of the system (as a `data.frame`, which we already have), and a `data.frame` of tolerances to match to (these must be decreasing over each generation of the ABC-SMC algorithm):
+The `simBS` function we have made therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. The final things we need to specify are the number of particles (50 say), the initial states of the system (as a `data.frame`, which we already have), and a `data.frame` of tolerances to match to (these must be decreasing over each generation of the ABC-SMC algorithm):
 
 ```{r}
 ## set number of particles
@@ -130,20 +130,20 @@ Re-run the code above setting `parallel = F` and see the difference in evaluatio
 
 We can plot the approximate posterior distributions over the generations as follows:
 
-```{r}
+```{r, fig.width = 8, fig.height = 4}
 ## plot approximate posteriors
 plot(post)
 ```
 
 We can plot the simulated summary statistics from the accepted particles at each generation as:
 
-```{r}
+```{r, fig.width = 8, fig.height = 4}
 plot(post, type = "output")
 ```
 
 Given the speed of the simulations, let's try running for a few more generations. To do this we can set up a new `data.frame` of tolerances, which must be smaller than the previous generation (which had a tolerance of 20 for both summary statistics in this case). We can then pass the current `ABCSMC` object (`post` here) back into the `ABCSMC` function, with new tolerances and run for a few more generations:
 
-```{r}
+```{r, fig.width = 8, fig.height = 4}
 ## set up new set of tolerances
 tols <- matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T)
 tols <- rbind(tols, matrix(rep(seq(4, 1, by = -1), each = 2), ncol = 2, byrow = T))
@@ -161,7 +161,7 @@ plot(post, "output")
 
 Notice how the approximate posteriors are tightening up as we require to match more precisely. Notice also that the acceptance rate of each generation of ABC-SMC drops as the tolerances decrease. In fact we can see this more clearly if we plot just the first and final generation. Fortunately, we can choose which generations to plot using the `gen` argument to `plot()` e.g.
 
-```{r, fig.width = 10, fig.height = 5}
+```{r, fig.width = 8, fig.height = 4}
 ## plot approximate posteriors
 plot(post, gen = c(1, 11))
 
@@ -208,7 +208,7 @@ plot(post, transfunc = R0fn, gen = c(1, 5, 11), joint = T)
 
 Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is greater than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie above one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate an estimate as below.)
 
-```{r, eval = F}
+```{r}
 ## function to calculate whether R0 > 1
 R0gt <- function(beta, muI) {
     data.frame(R0gt = as.numeric((beta / muI) > 1))
