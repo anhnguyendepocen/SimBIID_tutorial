@@ -1,0 +1,363 @@
+# ABC-SMC
+
+To illustrate some of these ideas we can use a case study of influenza in a boarding school (1978). These data are from a paper in the BMJ in 1978[^1] and provided at [http://kingaa.github.io/short-course/stochsim/bsflu_data.txt](http://kingaa.github.io/short-course/stochsim/bsflu_data.txt). I have downloaded the file as "BS.csv".
+
+[^1]: Influenza in a Boarding School. British Medical Journal, **1:587**, 1978.
+
+The event probabilities are:
+
+\begin{align*}
+    P\left[\mbox{infection~($I$)~event~in}~[t, t + \delta t)\right] &= \beta S I / N + o(\delta t)\\
+    P\left[\mbox{bed-rest~($R_1$)~event~in}~[t, t + \delta t)\right] &= \mu_I I + o(\delta t)\\
+    P\left[\mbox{convalescence~($R_2$)~event~in}~[t, t + \delta t)\right] &= \mu_{R_1} R_1 + o(\delta t)
+\end{align*}
+
+Here we are going to match to the final epidemic size (512 children), and the sum-of-squared differences between the observed bed-rest counts (given by `BS$B`) and the simulated bed-rest counts (given by the $R_1$ class in our model). The initial population size is 763 pupils, and we assume an initial introduction of infection of a single boy at day 0.
+
+```{r, message = F, warning = F}
+## load library
+library(SimBIID)
+
+## load data
+BS <- read.csv("BS.csv", header = T)
+
+## extract summaries
+finaltime <- max(BS$day)
+finalsize <- 512
+```
+
+## Set up simple simulation model
+
+To set up the model above we need a character vector of transition rates:
+
+```{r}
+## test compilation model
+transitions <- c(
+    "S -> beta * S * I / (S + I + B + R) -> I", 
+    "I -> gamma * I -> B", 
+    "B -> delta * B -> R"
+)
+```
+
+We also need a vector of compartment names and parameter names:
+
+```{r}
+compartments <- c("S", "I", "B", "R")
+pars <- c("beta", "gamma", "delta")
+```
+
+We then build a model using the `mparseRcpp()`:
+
+```{r}
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars
+)
+```
+
+The `SimBIID` package provides a `run()` method to run individual or multiple simulations from the model. By default the `mparseRcpp` creates a function that takes four arguments:
+
+* `pars`: a vector of parameter values;
+* `tstart`: the time to begin the simulation;
+* `tstop`: the time to end the simulation;
+* `u`: states of the system at `tstart`.
+
+We can then pass this object to the `run()` method, along with the corresponding arguments e.g.
+
+```{r}
+## define parameters
+simPars <- data.frame(beta = 3.7, gamma = 2.2, delta = 0.78)
+
+## define initial states
+iniStates <- data.frame(S = 762, I = 1, B = 0, R = 0)
+
+## run model
+sims <- run(
+    model,
+    pars = simPars,
+    tstart = 0,
+    tstop = 14,
+    u = iniStates
+)
+sims
+```
+
+Currently this outputs a `data.frame` with columns of the form: `completed / t / u*`, where `completed` is a binary variable containing the value `1` if the epidemic finished before time point `tstop`, and `0` otherwise. Then the value `t` is the time point when the epidemic finished (or `tstop` if the epidemic was still ongoing when the function exited), and `u*` corresponds to a copy of the states of the system at the final time point.
+
+Here we can see that the simulation finished at time point `t = 13.95`, with the final state of the system given by `c(S = 192, I = 0, B = 0, R = 571)`.
+
+### `tspan`
+
+Alternatively, we may want to return the states of the system at a series of pre-determined points. We can do this by adding a `tspan` argument, which is a vector of time points at which we wish to return the states. We initialise the model by telling `mparseRcpp` that we wish to include a `tspan` argument e.g.
+
+```{r}
+## generate model
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    tspan = T
+)
+```
+
+When we `run()` the model, we can enter a suitable `tspan` argument as a vector of time points at which we wish to return the states e.g.
+
+```{r, include = F}
+set.seed(10)
+```
+
+```{r}
+sims <- run(
+    model,
+    pars = simPars,
+    tstart = 0,
+    tstop = 14,
+    u = iniStates,
+    tspan = 1:14
+)
+sims
+```
+
+Here we can see that the epidemic is still going at time point `t = 14`, but that there are no more infectives left, so the epidemic will complete shortly (once the remaining individual in the $B$ class moves to the $R$ class).
+
+### Plotting simulations
+
+The `run()` method outputs a `SimBIID_runs` object, which can be plotted using the `plot()` function:
+
+```{r}
+## plot simulation
+plot(sims)
+```
+
+### Running multiple simulations
+
+We can run multiple simulations by passing a `nrep` argument to `run()`. For example, to run 100 replicates and plot them:
+
+```{r}
+sims <- run(
+    model,
+    pars = simPars,
+    tstart = 0,
+    tstop = 14,
+    u = iniStates,
+    tspan = 1:14,
+    nrep = 100
+)
+sims
+plot(sims)
+```
+
+We can add individual trajectories by inputing their replicate number, e.g.
+
+```{r}
+plot(sims, rep = c(1, 2))
+```
+
+There is an argument in `run()` to enable parallel processing if required (if the `parallel` package is installed). See help file for `run()` e.g. `?run` for more details.
+
+## Approximate Bayesian Computation
+
+Here we will run the ABC-SMC routine of Toni et al. (2009).
+
+### Summary statistics
+
+In order to run an ABC routine, it is necessary to define a set of lower order summary statistics to match to. The data here are time-series counts of ***bed-rest *** and ***convalescence*** events. A very simple option would be to match to:
+
+* final epidemic size (i.e. total number of removals across the time course of the epidemic), and
+* time of final removal (in this case when the epidemic process ceased).
+
+Although simple, these two measures serve to give us some information on both the **length** and **magnitude** of the epidemic, and should contain at least some useful information about the parameters. In this case the final removal time is `r finaltime` days and the final epidemic size is `r finalsize` individuals.
+
+### Simulation model
+
+In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous section, and specify a model using the `mparseRcpp()` function. The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see that the first argument to the function must be either an `ABCSMC` object (we will come to this later), or a `data.frame` with a single row, and columns containing the observed summary statistics to match to. Let's create this data frame:
+
+```{r}
+## create data frame of summary statistics
+sumStat <- data.frame(finalsize = finalsize, finaltime = finaltime)
+sumStat
+```
+
+The second argument must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$, $\mu_I \sim U(0, 5)$ and $\mu_R \sim U(0, 1)$. We can specify this as follows:
+
+```{r}
+## set priors
+priors <- data.frame(parnames = c("beta", "muI", "muR1"), 
+                     dist = rep("unif", 3), stringsAsFactors = F)
+priors$p1 <- c(0, 0, 0)
+priors$p2 <- c(5, 5, 1)
+priors
+```
+
+The third argument is a function that runs the simulator and checks whether the simulation matches the data. The first four arguments to this function must be `pars`, `data`, `tols` and `u`. Within the function:
+
+* `pars`: is a *vector* of parameters (the order must match the order of the `priors` argument to the `ABCSMC` function);
+* `data`: a *vector* of data points to match to (must match the order of the `x` argument to the `ABCSMC` function);
+* `tols`: a *vector* of tolerances (must match the order of `data`);
+* `u`: a *vector* of initial states (must match order of the `u` argument to the `ABCSMC` function).
+
+> **Please note: there is no internal check on you getting these orders correct. It is up to you to be careful when setting up this function**.
+
+If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `ncol(data)` and with entries in the same order as the columns of data. It is possible to add further arguments to this function, as long as they appear after `pars`, `data`, `tols` and `u`. For example, in our case we are going to pass our simulation model in as an additional argument called `model` e.g.
+
+```{r}
+## set up function to perform simulation and check matching
+simBS <- function(pars, data, tols, u, model) {
+    
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u)
+    
+    ## this returns a vector of outputs of the form:
+    ## completed (1/0), t, S, I, B, R (here)
+    if(sims[1] == 0) {
+        ## if epidemic still going at 
+        ## time = finaltime + tol, then reject
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- sims[2]
+        finalsize <- sims[6]
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime) - data) <= tols)){
+        return(c(finalsize, finaltime))
+    } else {
+        return(NA)
+    }
+}
+```
+
+> **Note**: To speed things up here we will not use the `run()` function, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function. The `run()` function does all this internally, but here we will do it in two stages.
+
+Hence, to specify and compile the model we can run:
+
+```{r}
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars
+)
+model <- compileRcpp(model)
+model
+```
+
+You can see that the compiled model is an R `function` that takes four arguments, `pars`, `tstart`, `tstop` and `u`. Convenient eh?
+
+> **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()`.
+
+This function therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. The final things we need to specify are the number of particles (50 say), the initial states of the system (as a `data.frame`, which we already have), and a `data.frame` of tolerances to match to (these must be decreasing over each generation of the ABC-SMC algorithm):
+
+```{r}
+## set number of particles
+npart <- 50
+
+## set tolerances
+tols <- matrix(rep(seq(50, 20, by = -10), each = 2), ncol = 2, byrow = T)
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+tols
+```
+
+This sets up 4 generations of ABC, with tolerances starting at 50 in the first generation, and decreasing to 20 in the final generation (note that the tolerances can be different between the summary statistics, I've just set them to be the same here).
+
+Now we can run the routine (note that these algorithms are computationally intensive, so if you can spare the processing power, it's often good to set `parallel = T` to use parallel processing):
+
+```{r}
+## run ABC-SMC algorithm
+post <- ABCSMC(sumStat, priors, simBS, iniStates, npart, 
+               tols, parallel = T, model = model)
+```
+
+```{task}
+Re-run the code above setting `parallel = F` and see the difference in evaluation times.
+```
+
+We can plot the approximate posterior distributions over the generations as follows:
+
+```{r}
+## plot approximate posteriors
+plot(post)
+```
+
+We can plot the simulated summary statistics from the accepted particles at each generation as:
+
+```{r}
+plot(post, type = "output")
+```
+
+Given the speed of the simulations, let's try running for a few more generations. To do this we can set up a new `data.frame` of tolerances, which must be smaller than the previous generation (which had a tolerance of 20 for both summary statistics in this case). We can then pass the current `ABCSMC` object (`post` here) back into the `ABCSMC` function, with new tolerances and run for a few more generations:
+
+```{r}
+## set up new set of tolerances
+tols <- matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T)
+tols <- rbind(tols, matrix(rep(seq(4, 1, by = -1), each = 2), ncol = 2, byrow = T))
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+
+## run for a few more generations
+post <- ABCSMC(post, tols, parallel = T)
+
+## plot approximate posteriors and simulated
+## summary statistics
+plot(post)
+plot(post, "output")
+```
+
+Notice how the approximate posteriors are tightening up as we require to match more precisely. Notice also that the acceptance rate of each generation of ABC-SMC drops as the tolerances decrease. In fact we can see this more clearly if we plot just the first and final generation. Fortunately, we can choose which generations to plot using the `gen` argument to `plot()` e.g.
+
+```{r, fig.width = 10, fig.height = 5}
+## plot approximate posteriors
+plot(post, gen = c(1, 11))
+
+## plot accepted outputs
+plot(post, "output", gen = c(1, 11))
+```
+
+We can also produce joint density plots (if the `GGally` package is installed):
+
+```{r, fig.width = 6, fig.height = 6}
+## joint distributions
+plot(post, gen = c(1, 5, 11), joint = T)
+```
+
+A call to `summary()` produces weighted estimates for the posterior means and standard deviations for the parameters in the final generation:
+
+```{r}
+summary(post)
+```
+
+### Calculate posterior for $R_0$
+
+We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a `transfunc` argument to the `summary()` method (this function must return a `data.frame` object). For example, as discussed in the lecture, if we have $\beta$ and $\gamma$, then we can also calculate the marginal posterior distribution for $R_0$ (here defined as $R_0 = \frac{\beta}{\gamma}$), as well as, let's say, the length of the infectious period. Hence:
+
+```{r}
+## function to calculate R0 and infectious period
+R0fn <- function(beta, muI) {
+    data.frame(R0 = beta / muI, infperiod = 1 / muI)
+}
+summary(post, transfunc = R0fn)
+```
+
+We can plot distributions for transformed variables in a similar way:
+
+```{r, fig.width = 8, fig.height = 4}
+## plot distribution for R0
+plot(post, transfunc = R0fn, gen = c(1, 5, 11))
+```
+
+```{r, fig.width = 8, fig.height = 8}
+## plot joint distributions
+plot(post, transfunc = R0fn, gen = c(1, 5, 11), joint = T)
+```
+
+Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is greater than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie above one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate an estimate as below.)
+
+```{r, eval = F}
+## function to calculate whether R0 > 1
+R0gt <- function(beta, muI) {
+    data.frame(R0gt = as.numeric((beta / muI) > 1))
+}
+summary(post, transfunc = R0gt)
+```
