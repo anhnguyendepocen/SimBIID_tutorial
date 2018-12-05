@@ -1,0 +1,49 @@
+# Approximate Bayesian Computation
+
+Here we will run the ABC-PMCMC routine of Drovandi et al. (2016). This uses the alive particle filter of Jasra et al. (2012). Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C. The `SimBIID` package provides a function `PMCMC()` that runs this algorithm, but requires that you pass the compiled model into the code in a slightly different way. Fortunately, there is an option to `mparseRcpp` that tells the compiler whether to compile into an object that can be called from R, or an object that can be called directly from C (set `runFromR = F` as below).
+
+The other thing is that we will be matching at a set of given time points, and so we need to tell the model to return the outputs in a slightly different form (which is captured by setting `matchCrit = T` in `mparseRcpp`). Hence:
+
+```{r}
+## set up model to compile to an XPtr object
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    matchCrit = T,
+    runFromR = F
+)
+## compile model for use in PMCMC
+model <- compileRcpp(model)
+model
+```
+
+Here we will match to both the $B$ and $C$ curves using the same tolerance in each case. Therefore we must set up a `data.frame` with `time` as the first column, and then each other column being the data to match to.
+
+```{r}
+## set up data to match to
+data <- BS[, c(4, 2)]
+colnames(data)[1] <- "time"
+data$time <- data$time - 1
+data
+```
+
+Now we run the ABC-PMCMC algorithm for 2,000 iterations, using 20 particles and a tolerance of $\pm 20$ at each time point.
+
+```{r}
+## run PMCMC algorithm using starting values from the ABC-SMC
+bs_mcmc <- PMCMC(data, priors, model, iniStates,
+                 npart = 20, tols = 20, whichind = 3, 
+                 niter = 2000, nprintsum = 100)
+```
+
+## plot MCMC output
+plot(bs_mcmc, "trace")
+plot(bs_mcmc)
+
+## run for a bit longer
+bs_mcmc <- PMCMC(bs_mcmc)
+
+## plot MCMC output
+plot(bs_mcmc, "trace")
+plot(bs_mcmc)
