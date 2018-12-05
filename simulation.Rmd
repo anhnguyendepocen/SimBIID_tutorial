@@ -1,0 +1,136 @@
+# Set up simple simulation model
+
+This chapter is to illustrate how to use `mparseRcpp` to simulate from the flu model that we wish to fit to the boarding school data.
+
+```{r, warning = F, message = F}
+## load library
+library(SimBIID)
+```
+
+To set up the model above we need a character vector of transition rates:
+
+```{r}
+## test compilation model
+transitions <- c(
+    "S -> beta * S * I / (S + I + B + C) -> I", 
+    "I -> muI * I -> B", 
+    "B -> muB * B -> C"
+)
+```
+
+We also need a vector of compartment names and parameter names:
+
+```{r}
+compartments <- c("S", "I", "B", "C")
+pars <- c("beta", "muI", "muB")
+```
+
+We then build a model using the `mparseRcpp()`:
+
+```{r}
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars
+)
+```
+
+The `SimBIID` package provides a `run()` method to run individual or multiple simulations from the model. By default the `mparseRcpp` creates a function that takes four arguments:
+
+* `pars`: a vector of parameter values;
+* `tstart`: the time to begin the simulation;
+* `tstop`: the time to end the simulation;
+* `u`: states of the system at `tstart`.
+
+We can then pass this object to the `run()` method, along with the corresponding arguments e.g.
+
+```{r}
+## define parameters
+simPars <- data.frame(beta = 3.7, muI = 2.2, muB = 0.78)
+
+## define initial states
+iniStates <- data.frame(S = 762, I = 1, B = 0, C = 0)
+
+## run model
+sims <- run(
+    model,
+    pars = simPars,
+    tstart = 0,
+    tstop = 14,
+    u = iniStates
+)
+sims
+```
+
+Currently this outputs a `data.frame` with columns of the form: `completed / t / u*`, where `completed` is a binary variable containing the value `1` if the epidemic finished before time point `tstop`, and `0` otherwise. Then the value `t` is the time point when the epidemic finished (or `tstop` if the epidemic was still ongoing when the function exited), and `u*` corresponds to a copy of the states of the system at the final time point.
+
+Here we can see that the simulation finished at time point `t = 13.95`, with the final state of the system given by `c(S = 192, I = 0, B = 0, C = 571)`.
+
+### `tspan`
+
+Alternatively, we may want to return the states of the system at a series of pre-determined points. We can do this by adding a `tspan` argument, which is a vector of time points at which we wish to return the states. We initialise the model by telling `mparseRcpp` that we wish to include a `tspan` argument e.g.
+
+```{r}
+## generate model
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    tspan = T
+)
+```
+
+When we `run()` the model, we can enter a suitable `tspan` argument as a vector of time points at which we wish to return the states e.g.
+
+```{r, include = F}
+set.seed(10)
+```
+
+```{r}
+sims <- run(
+    model,
+    pars = simPars,
+    tstart = 0,
+    tstop = 14,
+    u = iniStates,
+    tspan = 1:14
+)
+sims
+```
+
+Here we can see that the epidemic is still going at time point `t = 14`, but that there are no more infectives left, so the epidemic will complete shortly (once the remaining individual in the $B$ class moves to the $R$ class).
+
+### Plotting simulations
+
+The `run()` method outputs a `SimBIID_runs` object, which can be plotted using the `plot()` function:
+
+```{r}
+## plot simulation
+plot(sims)
+```
+
+### Running multiple simulations
+
+We can run multiple simulations by passing a `nrep` argument to `run()`. For example, to run 100 replicates and plot them:
+
+```{r}
+sims <- run(
+    model,
+    pars = simPars,
+    tstart = 0,
+    tstop = 14,
+    u = iniStates,
+    tspan = 1:14,
+    nrep = 100
+)
+sims
+plot(sims)
+```
+
+We can add individual trajectories by inputing their replicate number, e.g.
+
+```{r}
+plot(sims, rep = c(1, 2))
+```
+
+There is an argument in `run()` to enable parallel processing if required (if the `parallel` package is installed). See help file for `run()` e.g. `?run` for more details.
