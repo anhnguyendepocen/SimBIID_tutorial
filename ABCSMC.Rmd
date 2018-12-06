@@ -215,3 +215,216 @@ R0gt <- function(beta, muI) {
 }
 summary(post, transfunc = R0gt)
 ```
+
+## Adding additional matching criteria
+
+Matching to final epidemic size and the date of the final removal only is quite crude. We could also incorporate information regarding the observed $B$ and $C$ curves. One option would be to generate some summary measure of distance between the simulated and observed curves, something like a sum-of-squared differences e.g.
+$$
+    S_B = \sum_{t = 1}^T \left(B_t - B^*_t\right)^2,
+$$
+where $B_t$ is the **observed** counts at time $t$, and $B^*_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly*, then $S_B = 0$, with large values of $S_B$ corresponding to poor matches between the simulated and observed counts.
+
+To calculate $S_B$, we have to re-compile the model with the `tspan` option turned on.
+
+```{r}
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    tspan = T
+)
+model <- compileRcpp(model)
+model
+```
+You can now see that the new function has an additional `tspan` argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a `tspan` argument to our `simBS` function. In addition, we will also need to pass the observed time-series counts to this function (which we call `B` here).
+
+```{r}
+## set up function to perform simulation and check matching
+simBS <- function(pars, data, tols, u, model, tspan, B) {
+    
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u, tspan)
+    
+    ## this returns a matrix with columns of the form:
+    ## completed (1/0), t, S, I, B, C (here)
+    ## the final row is the summary of the epidemic
+    ## at the final time point (as if tspan had not 
+    ## been used)
+    ##
+    ## the earlier rows correspond to states of the 
+    ## system at each time point t (the 'completed'
+    ## column is extraneous here, and so is set to NA)
+    ##
+    ## Firstly, separate the time-series counts from the
+    ## final epidemic summaries
+    simSum <- sims[nrow(sims), ]
+    counts <- sims[-nrow(sims), -1]
+    if(simSum[1] == 0) {
+        ## if epidemic still going at 
+        ## time = finaltime + tol, then reject
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- simSum[2]
+        finalsize <- simSum[6]
+        
+        ## calculate sum-of-squared distances of
+        ## simulations from observations
+        SB <- sum((B - counts[, 2])^2)
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime, SB) - data) <= tols)){
+        return(c(finalsize, finaltime, SB))
+    } else {
+        return(NA)
+    }
+}
+```
+
+Now we need to set up a new range of tolerances and rerun the ABC-SMC routine. It can sometimes be difficult to decide on the ranges of possible values for these summary measures. `SimBIID` provides an `ABCRef()` function that provides an ABC reference table. Essentially this function conducts a large number of simulations at different parameter values and tabulates the simulated summary statistics, which can act as a useful guide. The `ABCRef()` function requires us to pass a function (which we will call `simBSRef` below) that conducts a simulation and returns a vector of summary statistics. This function must have the first argument `pars` (a vector of parameters), but can also take other arguments.
+
+```{r}
+## set up function to perform simulation and check matching
+simBSRef <- function(pars, u, model, tspan, B, tstop) {
+    
+    ## run model
+    sims <- model(pars, 0, tstop, unlist(u), tspan)
+    
+    ## this returns a matrix with columns of the form:
+    ## completed (1/0), t, S, I, B, C (here)
+    ## the final row is the summary of the epidemic
+    ## at the final time point (as if tspan had not 
+    ## been used)
+    ##
+    ## the earlier rows correspond to states of the 
+    ## system at each time point t (the 'completed'
+    ## column is extraneous here, and so is set to NA)
+    ##
+    ## Firstly, separate the time-series counts from the
+    ## final epidemic summaries
+    simSum <- sims[nrow(sims), ]
+    counts <- sims[-nrow(sims), -1]
+    
+    ## extract finaltime and finalsize
+    finaltime <- simSum[2]
+    finalsize <- simSum[6]
+    
+    ## calculate sum-of-squared distances of
+    ## simulations from observations
+    SB <- sum((B - counts[, 2])^2)
+    
+    ## return summary measures
+    return(c(finalsize, finaltime, SB))
+}
+```
+
+Now produce a reference table from the posterior means of the earlier ABC-SMC runs:
+
+```{r}
+## extract posterior means
+postMn <- summary(post)$Mean[1:3]
+postMn <- data.frame(matrix(postMn, nrow = 1))
+
+## set up summary stats to match to
+sumStat$SB <- 0
+
+## produce ABC reference table
+BS_ref <- ABCRef(500, pars = postMn, func = simBSRef, data = sumStat, parallel = T,
+        u = iniStates, model = model, tspan = BS$day, B = BS$B, tstop = max(BS$day) * 2)
+summary(BS_ref)
+```
+
+```{r, fig.width = 8, fig.height = 4}
+## set up new set of tolerances
+tols <- matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T)
+tols <- cbind(tols, seq(1000000, 900000, length.out = 3))
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime", "SB")
+
+## run ABC-SMC algorithm
+post <- ABCSMC(sumStat, priors, simBS, iniStates, npart, 
+               tols, parallel = T, 
+               model = model, tspan = BS$day, B = BS$B)
+
+## plot approximate posteriors and simulated
+## summary statistics
+plot(post)
+plot(post, "output")
+```
+
+## Speeding up simulations using stopping criteria
+
+One way to speed up the algorithms is to note that if we have summary statistics that are **monotonically** increasing, then we can monitor these criteria during the simulation and reject the simulation as soon as the simulated summary measure is greater than the observed summary measure by more than the tolerance. This means that we do not have to run the simulation to completion to reject it.
+
+We've already done this to a certain extent by only simulating up to time $T + \mbox{tol}$, where $T$ is the final removal time. The rationale was the same; if the epidemic is still ongoing at time $T + \mbox{tol}$, then by definition the difference between the simulated final removal time and the observed final removal time will be greater than the tolerance, and furthermore this distance will keep increasing. Hence we do not have to find out the exact final removal time in order to reject the simulation.
+
+Here we will use a `stopCrit` argument to `mparseRcpp()` to define additional stopping criteria, based on the other summary statistics. The argument is defined as a **conditional statement** that defines when to reject. For example, to add a stopping criterion based on the final epidemic size, we can reject once $C^* > C_F + \mbox{tol}$, where $C^*$ is the **simulated** number of convalescences and $C_F$ is the final **observed** number of convalescences. Hence,
+
+```{r}
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    tspan = T,
+    addVars = c("CF", "tolF"),
+    stopCrit = "u[3] > (CF + tolF)"
+)
+model <- compileRcpp(model)
+model
+```
+
+```{r}
+## set up function to perform simulation and check matching
+simBS <- function(pars, data, tols, u, model, tspan, B, CF) {
+    
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u, tspan, CF, tols[1])
+    
+    ## this returns a matrix with columns of the form:
+    ## completed (1/0), t, S, I, B, C (here)
+    ## the final row is the summary of the epidemic
+    ## at the final time point (as if tspan had not 
+    ## been used)
+    ##
+    ## the earlier rows correspond to states of the 
+    ## system at each time point t (the 'completed'
+    ## column is extraneous here, and so is set to NA)
+    ##
+    ## Firstly, separate the time-series counts from the
+    ## final epidemic summaries
+    simSum <- sims[nrow(sims), ]
+    counts <- sims[-nrow(sims), -1]
+    if(simSum[1] == 0) {
+        ## if simulation rejected
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- simSum[2]
+        finalsize <- simSum[6]
+        
+        ## calculate sum-of-squared distances of
+        ## simulations from observations
+        SB <- sum((B - counts[, 2])^2)
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime, SB) - data) <= tols)){
+        return(c(finalsize, finaltime, SB))
+    } else {
+        return(NA)
+    }
+}
+```
+
+```{r, fig.width = 8, fig.height = 4}
+## run ABC-SMC algorithm
+post <- ABCSMC(sumStat, priors, simBS, iniStates, npart, 
+               tols, parallel = T, 
+               model = model, tspan = BS$day, B = BS$B, CF = finalsize)
+
+## plot approximate posteriors and simulated
+## summary statistics
+plot(post)
+plot(post, "output")
+```
