@@ -1,0 +1,233 @@
+# Example: Abakaliki smallpox outbreak
+
+Firstly, load in the data:
+
+```{r}
+## read in the data and convert to vector
+smallpox <- as.numeric(unlist(read.table("smallpox.txt", header = F)))
+summary(smallpox)
+```
+
+These data are the inter-removal times for `r length(smallpox)` individuals, where the times have been relabelled such that time 0 is the time of the first removal. See e.g. [@oneill_roberts:1999] for more details.
+
+## SIR model
+
+Recall, for a continuous-time SIR model we have rates of transition between states given by:
+
+$$
+    P\left[\mbox{infection event in}~[t, t + \delta t)\right] = \beta S I + o(\delta t)\\
+    P\left[\mbox{removal event in}~[t, t + \delta t)\right] = \gamma I + o(\delta t)
+$$
+
+## Summary statistics
+
+In the first instance, as before, let's match to:
+
+* final epidemic size (i.e. total number of removals across the time course of the epidemic), and
+* time of final removal (in this case when the epidemic process ceased).
+
+Although simple, these two measures serve to give us some information on both the *length* and *magnitude* of the epidemic, and should contain useful information about the parameters. In this case the final removal time is `r max(smallpox)` days and the final epidemic size is `r length(smallpox)` individuals.
+
+## Simulation model
+
+In order to use the `ABCSMC` function, we need to define a function that runs the simulations and returns an `NA` if the simulation is rejected, or a vector of summary statistics if it is not.
+
+> **Note**: one thing to be careful of for this particular system, is that the data are aligned to time 0 being the time of the first *removal*, not *infection*. Just for illustration, we are going to simplify things in the first instance, and assume that the first infection happens 10 days before the first removal, which corresponds to adding 10 days to each of our observed removal times.
+
+Copy-and-paste the function below. Go through this function and understand what each line is doing.
+
+```{r}
+## reset times so that initial infection occurs
+## 10 days before first removal
+smallpox <- smallpox + 10
+
+## extract data
+finaltime <- max(smallpox)
+
+## set initial states (1 initial infection in population of 120)
+iniStates <- data.frame(S = 119, I = 1, R = 0)
+
+## set up models
+transitions <- c(
+    "S -> beta * S * I -> I", 
+    "I -> gamma * I -> R"
+)
+compartments <- c("S", "I", "R")
+pars <- c("beta", "gamma")
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars
+)
+```
+
+```{r}
+## compile model for use in ABC
+model <- compileRcpp(model)
+    
+## set up function to perform simulation
+simSIR <- function(pars, data, tols, u, model) {
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u)
+    
+    ## this returns a vector of the form:
+    ## completed (1/0), t, S, I, R (here)
+    if(sims[1] == 0) {
+        ## if simulation rejected
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- sims[2]
+        finalsize <- sims[5]
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime) - data) <= tols)){
+        return(c(finalsize, finaltime))
+    } else {
+        return(NA)
+    }
+}
+```
+
+## ABC routine
+
+Here we are going to use the sequential ABC routine of [@tonietal:2009]. Here we need to set the number of particles ($n = 50$), and a vector of tolerances, which also defines the number of generations. In the first instance I'm going to use 10 generations, moving from $\epsilon = 100$ to $\epsilon = 20$. When passing arguments to the `ABCSMC` function, note that `tols`, `priors` and `data` must all be `data.frame` objects (see `?ABCSMC`):
+
+```{r}
+# set number of particles required
+npart <- 50
+
+## set tolerances
+tols <- matrix(rep(seq(50, 20, by = -10), each = 2), ncol = 2, byrow = T)
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+
+## set priors
+priors <- data.frame(
+    parnames = c("beta", "gamma"), 
+    dist = rep("gamma", 2), 
+    stringsAsFactors = F
+)
+priors$p1 <- c(10, 10)
+priors$p2 <- c(10^4, 10^2)
+
+## define the targeted summary statistics
+data <- data.frame(
+    finalsize = length(smallpox), 
+    finaltime = max(smallpox)
+)
+```
+
+Now we can run a few generations of ABC-SMC:
+
+```{r}
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simSIR, iniStates, npart, tols, parallel = T, model = model)
+```
+
+Now we can plot the generations of ABC as follows:
+
+```{r, fig.width = 10, fig.height = 5}
+## plot approximate posteriors
+plot(post)
+
+## plot accepted outputs
+plot(post, "output")
+```
+
+Now run for another few generations.
+
+```{r}
+tols <- matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T)
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+
+## run ABC-SMC algorithm
+post <- ABCSMC(post, tols, parallel = T)
+```
+
+We can also choose which generations to plot using the `gen` argument to `plot()` e.g.
+
+```{r, fig.width = 10, fig.height = 5}
+## plot approximate posteriors
+plot(post, gen = c(1, 5, 7))
+
+## plot accepted outputs
+plot(post, "output", gen = c(1, 5, 7))
+```
+
+We can also produce joint density plots (if the `GGally` package is installed):
+
+```{r, fig.width = 6, fig.height = 6}
+## joint distributions
+plot(post, gen = c(1, 5, 7), joint = T)
+```
+
+A call to `summary()` produces weighted estimates for the posterior means and standard deviations for the parameters:
+
+```{r}
+summary(post)
+```
+
+## Calculate posterior for $R_0$
+
+We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a `transfunc` argument to the `summary()` method (this function must return a `data.frame` object). For example, as discussed in the lecture, if we have $\beta$ and $\gamma$, then we can also calculate the marginal posterior distribution for $R_0$ (here defined as $R_0 = \frac{N \beta}{\gamma}$), as well as, let's say, the length of the infectious period. Hence:
+
+```{r}
+## function to calculate R0 and infectious period
+R0fn <- function(beta, gamma) {
+    data.frame(R0 = 120 * beta / gamma, infperiod = 1 / gamma)
+}
+summary(post, transfunc = R0fn)
+```
+
+We can plot distributions for transformed variables in a similar way:
+
+```{r, fig.width = 8, fig.height = 4}
+## plot distribution for R0
+plot(post, transfunc = R0fn, gen = c(1, 5, 7))
+```
+
+```{r, fig.width = 8, fig.height = 8}
+## plot joint distributions
+plot(post, transfunc = R0fn, gen = c(1, 5, 7), joint = T)
+```
+
+Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is less than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie below one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate an estimate as below.)
+
+```{r, eval = F}
+## function to calculate whether R0 > 1
+R0gt <- function(beta, gamma) {
+    data.frame(R0gt = as.numeric((120 * beta / gamma) > 1))
+}
+summary(post, transfunc = R0gt)
+```
+
+## Vague priors
+
+Let's try the same routine with less informative priors. 
+
+```{r, fig.width = 8, fig.height = 4, eval = F}
+## set priors
+priors$p1 <- c(1, 1)
+priors$p2 <- c(1, 1)
+
+## set tolerances as before
+tols <- matrix(rep(seq(50, 20, by = -10), each = 2), ncol = 2, byrow = T)
+tols <- rbind(tols, matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T))
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simSIR, iniStates, npart, tols, parallel = T, model = model)
+
+## summarise approximate posterior
+summary(post, transfunc = R0fn)
+
+## plot approximate posteriors
+plot(post, transfunc = R0fn, gen = c(1, 5, 7))
+
+## plot accepted outputs
+plot(post, "output", gen = c(1, 5, 7))
+```
