@@ -1,0 +1,179 @@
+# More challenging example: Ebola in the Democratic Republic of Congo
+
+The rates of transition between states in this model is given by:
+
+\begin{align*}
+    P\left[\mbox{infection event in}~[t, t + \delta t)\right] = \beta S I / N + o(\delta t)\\
+    P\left[\mbox{infectivity event in}~[t, t + \delta t)\right] = \delta E + o(\delta t)\\
+    P\left[\mbox{removal event in}~[t, t + \delta t)\right] = \gamma I + o(\delta t)
+\end{align*}
+
+where $\beta$ is *time-dependent*, such that:
+
+$$
+    \beta = \left\{
+    \begin{align}
+        &\beta & \mathrm{if}~t < t_{int},\\
+        &\beta e^{-q(t - t_{int})} & \mathrm{if}~t \geq t_{int},
+    \end{align}\right.
+$$
+
+where $t_{int}$ is the time at which intervention strategies were introduced. The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only decays at the beginning of each day. Hence the transmission term becomes:
+
+$$
+    \beta = \left\{
+    \begin{align}
+        &\beta & \mathrm{if}~t < t_{int},\\
+        &\beta e^{-q(\lfloor t \rfloor - t_{int})} & \mathrm{if}~t \geq t_{int},
+    \end{align}\right.
+$$
+where $\lfloor t \rfloor$ corresponds to rounding $t$ down to the nearest integer. Here $t_{int} = 126$, meaning that control interventions were introduced on day 126 of the outbreak. Hence the transmission rate between day 126 and 127 is:
+$$
+    \beta e^{-q(126 - 126)} = \beta,
+$$
+the transmission rate between day 127 and 128 is:
+$$
+    \beta e^{-q(127 - 126)} = \beta e^{-q},
+$$
+and so on. This behaviour can be captured in C by using the `floor()` function (which rounds down to the nearest integer), and an **if-else** statement, which in C is coded as `(CONDITION ? X:Y)`, where `CONDITION` is some conditional statement, which if **true** returns `X` and if **false** returns `Y`. Hence we can define our transmission rate to be:
+
+`beta * exp(-q * (t > 126.0 ? (floor(t) - 126.0):0.0))`
+
+This says that at time `t`, if `t` is **less than** $t_{int}$ then the rate is $\beta e^{-q \times 0} = \beta$, whereas if `t` is **greater than** $t_{int}$ then the transmission rate is $\beta e^{-q (\lfloor t \rfloor - 126)}$ as required. Now we can set up our model:
+
+```{r}
+## set up model
+transitions <- c(
+    "S -> beta * exp(-q * (t > 126.0 ? (floor(t) - 126.0):0.0)) * S * I / (S + E + I + R) -> E", 
+    "E -> delta * E -> I", 
+    "I -> gamma * I -> R"
+)
+compartments <- c("S", "E", "I", "R")
+pars <- c("beta", "delta", "gamma", "q")
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars
+)
+model <- compileRcpp(model)
+model
+```
+
+Now we can set priors and initial states:
+
+```{r}
+## set priors
+priors <- data.frame(
+    parnames = c("beta", "delta", "gamma", "q"), 
+    dist = rep("gamma", 4), 
+    stringsAsFactors = F
+)
+priors$p1 <- rep(2, 4)
+priors$p2 <- c(10, 10, 1 / 0.07, 10)
+
+## set initial states
+iniStates <- data.frame(S = 5364499, E = 0, I = 1, R = 0)
+```
+
+Now we set up the data to match to (final epidemic size and date of final removal):
+
+```{r}
+## define the targeted summary statistics
+data <- data.frame(finalsize = 316, finaltime = 191)
+```
+
+Finally we set the number of particles and a sequence of tolerances:
+
+```{r}
+## set number of particles required
+npart <- 200
+
+## set tolerances
+tols <- matrix(rep(round(seq(300, 40, length.out = 10)), each = 2), ncol = 2, byrow = T)
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+```
+
+We then set up a function to run the model, extract the final epidemic size and date of the final removal, and return the relevant measures:
+
+```{r}
+## function to match simulations
+simEbola <- function(pars, data, tols, u, model) {
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u)
+    
+    ## this returns a vector of the form:
+    ## completed (1/0), t, S, E, I, R (here)
+    if(sims[1] == 0) {
+        ## if simulation rejected
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- sims[2]
+        finalsize <- sims[6]
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime) - data) <= tols)){
+        return(c(finalsize, finaltime))
+    } else {
+        return(NA)
+    }
+}
+```
+
+Now we run the ABC-SMC algorithm:
+
+```{r}
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simEbola, iniStates, npart, tols, parallel = T, model = model)
+```
+
+```{r}
+## function to calculate R0 and length of
+## epidemiological periods
+R0fn <- function(beta, delta, gamma) {
+    data.frame(R0 = beta / gamma, latperiod = 1 / delta, infperiod = 1 / gamma)
+}
+
+## summarise approximate posterior
+summary(post, transfunc = R0fn)
+```
+
+```{r, fig.width = 8, fig.height = 8}
+## plot approximate posteriors
+plot(post, transfunc = R0fn, gen = c(1, 5, 10))
+```
+
+```{r}
+## plot accepted outputs
+plot(post, "output", gen = c(1, 5, 10))
+```
+
+This ran relatively quickly, so now run for another few generations...
+
+```{r}
+tols <- matrix(rep(seq(30, 10, by = -10), each = 2), ncol = 2, byrow = T)
+tols <- as.data.frame(tols)
+colnames(tols) <- c("finalsize", "finaltime")
+
+## run ABC-SMC algorithm
+post <- ABCSMC(post, tols, parallel = T)
+```
+
+Now summarise the outputs:
+
+```{r, fig.width = 10, fig.height = 5}
+## summarise approximate posterior
+summary(post, transfunc = R0fn)
+```
+
+```{r, fig.width = 8, fig.height = 8}
+## plot approximate posteriors
+plot(post, transfunc = R0fn, gen = c(1, 5, 13))
+```
+
+```{r}
+## plot accepted outputs
+plot(post, "output", gen = c(1, 5, 13))
+```
