@@ -1,5 +1,4 @@
-# Set
-up simple simulation model
+# Set up simple simulation model
 
 This chapter is to illustrate how to use `mparseRcpp` to simulate from the flu model that we wish to fit to the boarding school data.
 
@@ -103,7 +102,7 @@ sims <- run(
 sims
 ```
 
-Here we can see that the epidemic is still going at time point `t = 14`, but that there are no more infectives left, so the epidemic will complete shortly (once the remaining individual in the $B$ class moves to the $R$ class).
+Here we can see that the epidemic is still going at time point `t = 14`, but that there are no more infectives left, so the epidemic will complete shortly (once the remaining individual in the $B$ class moves to the $C$ class).
 
 ### Plotting simulations
 
