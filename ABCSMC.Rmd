@@ -295,14 +295,12 @@ Now produce a reference table from the posterior means of the earlier ABC-SMC ru
 ```{r}
 ## extract posterior means
 postMn <- summary(post)$Mean[1:3]
-postMn <- data.frame(matrix(postMn, nrow = 1))
-
-## set up summary stats to match to
-sumStat$SB <- 0
+names(postMn) <- priors$parnames
 
 ## produce ABC reference table
-BS_ref <- ABCRef(500, pars = postMn, func = simBSRef, data = sumStat, parallel = T,
-        u = iniStates, model = model, tspan = BS$day, B = BS$B, tstop = max(BS$day) * 2)
+BS_ref <- ABCRef(500, pars = postMn, func = simBSRef, sumNames = c("finalsize", "finaltime", "SB"), 
+                 parallel = T, u = iniStates, model = model, tspan = BS$day, B = BS$B, 
+                 tstop = max(BS$day) * 2)
 summary(BS_ref)
 ```
 
@@ -310,8 +308,10 @@ summary(BS_ref)
 ## set up new set of tolerances
 tols <- matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T)
 tols <- cbind(tols, seq(1000000, 900000, length.out = 3))
-tols <- as.data.frame(tols)
 colnames(tols) <- c("finalsize", "finaltime", "SB")
+
+## set up data to match to
+sumStat <- c(sumStat, SB = 0)
 
 ## run ABC-SMC algorithm
 post <- ABCSMC(sumStat, priors, simBS, iniStates, npart, 
