@@ -194,3 +194,78 @@ plot(post, transfunc = R0fn, gen = c(1, 5, 13))
 plot(post, "output", gen = c(1, 5, 13))
 ```
 
+<!-- ## Speeding up simulations using stopping criteria -->
+
+<!-- One way to speed up the algorithms is to note that if we have summary statistics that are **monotonically** increasing, then we can monitor these criteria during the simulation and reject the simulation as soon as the simulated summary measure is greater than the observed summary measure by more than the tolerance. This means that we do not have to run the simulation to completion to reject it. -->
+
+<!-- We've already done this to a certain extent by only simulating up to time $T + \mbox{tol}$, where $T$ is the final removal time. The rationale was the same; if the epidemic is still ongoing at time $T + \mbox{tol}$, then by definition the difference between the simulated final removal time and the observed final removal time will be greater than the tolerance, and furthermore this distance will keep increasing. Hence we do not have to find out the exact final removal time in order to reject the simulation. -->
+
+<!-- Here we will use a `stopCrit` argument to `mparseRcpp()` to define additional stopping criteria, based on the other summary statistics. The argument is defined as a **conditional statement** that defines when to reject. For example, to add a stopping criterion based on the final epidemic size, we can reject once $C^* > C_F + \mbox{tol}$, where $C^*$ is the **simulated** number of convalescences and $C_F$ is the final **observed** number of convalescences. Hence, -->
+
+<!-- ```{r} -->
+<!-- model <- mparseRcpp( -->
+<!--     transitions = transitions,  -->
+<!--     compartments = compartments, -->
+<!--     pars = pars, -->
+<!--     tspan = T, -->
+<!--     addVars = c("CF", "tolF"), -->
+<!--     stopCrit = "u[3] > (CF + tolF)" -->
+<!-- ) -->
+<!-- model <- compileRcpp(model) -->
+<!-- model -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- ## set up function to perform simulation and check matching -->
+<!-- simBS <- function(pars, data, tols, u, model, tspan, B, CF) { -->
+
+<!--     ## run model -->
+<!--     sims <- model(pars, 0, data[2] + tols[2], u, tspan, CF, tols[1]) -->
+
+<!--     ## this returns a matrix with columns of the form: -->
+<!--     ## completed (1/0), t, S, I, B, C (here) -->
+<!--     ## the final row is the summary of the epidemic -->
+<!--     ## at the final time point (as if tspan had not  -->
+<!--     ## been used) -->
+<!--     ## -->
+<!--     ## the earlier rows correspond to states of the  -->
+<!--     ## system at each time point t (the 'completed' -->
+<!--     ## column is extraneous here, and so is set to NA) -->
+<!--     ## -->
+<!--     ## Firstly, separate the time-series counts from the -->
+<!--     ## final epidemic summaries -->
+<!--     simSum <- sims[nrow(sims), ] -->
+<!--     counts <- sims[-nrow(sims), -1] -->
+<!--     if(simSum[1] == 0) { -->
+<!--         ## if simulation rejected -->
+<!--         return(NA) -->
+<!--     } else { -->
+<!--         ## extract finaltime and finalsize -->
+<!--         finaltime <- simSum[2] -->
+<!--         finalsize <- simSum[6] -->
+
+<!--         ## calculate sum-of-squared distances of -->
+<!--         ## simulations from observations -->
+<!--         SB <- sum((B - counts[, 2])^2) -->
+<!--     } -->
+
+<!--     ## return vector if match, else return NA -->
+<!--     if(all(abs(c(finalsize, finaltime, SB) - data) <= tols)){ -->
+<!--         return(c(finalsize, finaltime, SB)) -->
+<!--     } else { -->
+<!--         return(NA) -->
+<!--     } -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r, fig.width = 8, fig.height = 4} -->
+<!-- ## run ABC-SMC algorithm -->
+<!-- post <- ABCSMC(sumStat, priors, simBS, iniStates, npart,  -->
+<!--                tols, parallel = T,  -->
+<!--                model = model, tspan = BS$day, B = BS$B, CF = finalsize) -->
+
+<!-- ## plot approximate posteriors and simulated -->
+<!-- ## summary statistics -->
+<!-- plot(post) -->
+<!-- plot(post, "output") -->
+<!-- ``` -->
