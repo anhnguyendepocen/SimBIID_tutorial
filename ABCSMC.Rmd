@@ -300,7 +300,7 @@ plot(post, "output")
 ```
 
 ```{task}
-Add another summary measure corresponding to the sum-of-squared distances between the observed and simulated $C$ curves. Re-run your ABC-SMC routine. Try to set it up so that the tolerances in the final generation match those in your previous run (assuming that $S_B$ and $S_C$ are on the same scale). (You can extract the tolerances from the `ABCSMC` object using e.g. `post$tols`).
+Add another summary measure corresponding to the sum-of-squared distances between the observed and simulated $C$ curves. Re-run your ABC-SMC routine. 
 ```
 
 ```{solution}
@@ -345,24 +345,11 @@ simBS <- function(pars, data, tols, u, model, tspan, B, C) {
 To create a sequence of tolerances:
 
 ``{r}
-## extract target tolerances
-endtols <- post$tols
-endtols <- endtols[nrow(endtols), ]
-endtols <- c(endtols, endtols[length(endtols)])
-
 ## set initial tolerances
-tols <- c(tols, SB = 1e6, SC = 1e6)
-
-## set sequence of decreasing tolerances down
-## to target
-tols <- rbind(tols, endtols)
-tols <- apply(tols, 2, function(x){
-    seq(x[1], x[2], length.out = 4)
-})
-colnames(tols) <- c("finalsize", "finaltime", "SB", "SC")
+tols <- c(tols, SC = 1e6)
 ``
 
-Finally we set up the data to mathc to and run the model:
+Finally set up the data to match to and run the model:
 
 ``{r}
 ## set up data to match to
@@ -376,6 +363,8 @@ post <- ABCSMC(
     u = iniStates, 
     npart = 50,
     tols = tols,
+    ptols = 0.5,
+    ngen = 4,
     parallel = T, 
     model = model, tspan = BS$day, B = BS$B, C = BS$C
 )
