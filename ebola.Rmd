@@ -35,16 +35,28 @@ the transmission rate between day 127 and 128 is:
 $$
     \beta e^{-q(127 - 126)} = \beta e^{-q},
 $$
-and so on. This behaviour can be captured in C by using the `floor()` function (which rounds down to the nearest integer), and an **if-else** statement, which in C is coded as `(CONDITION ? X:Y)`, where `CONDITION` is some conditional statement, which if **true** returns `X` and if **false** returns `Y`. Hence we can define our transmission rate to be:
+and so on. This behaviour can be captured in C by using the `floor()` function (which rounds down to the nearest integer). We also need to update our rate at each daily time-step. We can do this by passing a `afterTstar` argument to the `mparseRcpp()` function. This inserts a small piece of C code after each new event time has been simulated. In this case we wish to update the `beta` rate at each time point, therefore:
 
-`beta * exp(-q * (t > 126.0 ? (floor(t) - 126.0):0.0))`
+```{r}
+## define a conditional statement to update the rates
+afterTstar <- "if(tstar > 126.0 && tstar < tstop) {
+    if(t < 126.0) {
+        t = 126.0;
+    }
+    while(tstar > floor(t + 1.0) && tstar < tstop){
+        t = floor(t + 1.0);
+        rates[0] = pars[0] * exp(-pars[3] * (t - 126.0)) * u[0] * u[1] / sum(u);
+        totrate = sum(rates);
+        tstar = t + R::rexp(1.0 / totrate);
+    }
+}"
 
-This says that at time `t`, if `t` is **less than** $t_{int}$ then the rate is $\beta e^{-q \times 0} = \beta$, whereas if `t` is **greater than** $t_{int}$ then the transmission rate is $\beta e^{-q (\lfloor t \rfloor - 126)}$ as required. Now we can set up our model:
+```
 
 ```{r}
 ## set up model
 transitions <- c(
-    "S -> beta * exp(-q * (t > 126.0 ? (floor(t) - 126.0):0.0)) * S * I / (S + E + I + R) -> E", 
+    "S -> beta * S * I / (S + E + I + R) -> E", 
     "E -> delta * E -> I", 
     "I -> gamma * I -> R"
 )
@@ -53,8 +65,12 @@ pars <- c("beta", "delta", "gamma", "q")
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
-    pars = pars
+    pars = pars,
+    afterTstar = afterTstar
 )
+```
+
+```{r}
 model <- compileRcpp(model)
 model
 ```
@@ -177,3 +193,4 @@ plot(post, transfunc = R0fn, gen = c(1, 5, 13))
 ## plot accepted outputs
 plot(post, "output", gen = c(1, 5, 13))
 ```
+
