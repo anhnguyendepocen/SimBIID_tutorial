@@ -1,0 +1,94 @@
+# Particle MCMC
+
+Here we will run the PMCMC routine using a bootstrap particle filter. Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C. The `SimBIID` package provides a function `PMCMC()` that runs this algorithm, and if you pass a `SimBIID_model` object to this function, it will automatically compile in the correct manner.
+
+The other thing is that we will be matching at a set of given time points, so we cannot add a `tspan` argument. Rather, this will be determined by the `data` that we pass to `PMCMC()`. In addition, we need to specify an observation process. This is passed as an argument called `obsProcess` to the `mparseRcpp()` function. This argument must be a `data.frame`, with columns in the order: `dataNames`, `dist`, `p1`, `p2`. 
+
+* `dataNames` is a character denoting the relevant compartment name to place the observation process onto; 
+* `dist` is a character specifying the distribution of the observation process (must be one of `"unif"`, `"pois"` or `"binom"` at the current time); 
+* `p1` is the first parameter (the lower bound in the case of `"unif"`, the rate in the case of `"pois"`, or the size in the case of `"binom"`); 
+* `p2` is the second parameter (the upper bound in the case of `"unif"`, `NA` in the case of `"pois"`, and `prob` in the case of `"binom"`).
+
+Here we will place a Poisson observation process around the $B$ curve, such that:
+$$
+    B^o_t \sim Po(\rho B^s_t),
+$$
+where $B^o_t$ is the **observed** $B$ count at time $t$, $B^s_t$ is the simulated count, and $\rho$ is some value in $(0, 1]$ corresponding to the **reporting rate**. 
+
+The `data` we will pass to the `PMCMC()` function will be a `data.frame` with the first column corresponding to `time` and the second corresponding to the *observed* $B$ curve. hence,
+
+```{r}
+## set up data to pass to PMCMC
+BS_dat <- data.frame(time = BS$day, Bo = BS$B)
+head(BS_dat)
+```
+To set up the observation process, we define a `data.frame` as follows:
+
+```{r}
+## set up observation process
+obs <- data.frame(
+    dataNames = "Bo",
+    dist = "pois",
+    p1 = "rho * B + 1e-5",
+    p2 = NA,
+    stringsAsFactors = F
+)
+```
+
+Here we note that we need to include the `rho` parameter into our model definition. Hence for completeness:
+
+```{r}
+## set up model
+transitions <- c(
+    "S -> beta * S * I / (S + I + B + C) -> I", 
+    "I -> muI * I -> B", 
+    "B -> muB * B -> C")
+compartments <- c("S", "I", "B", "C")
+pars <- c("beta", "muI", "muB", "rho")
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    obsProcess = obs
+)
+```
+
+Now we run the PMCMC algorithm for 2,000 iterations, using 100 particles. We pass the same initial states and priors as in the ABC-SMC practical.
+
+```{r}
+## set priors
+priors <- data.frame(parnames = c("beta", "muI", "muB", "rho"), 
+                     dist = rep("unif", 4), stringsAsFactors = F)
+priors$p1 <- c(0, 0, 0, 0)
+priors$p2 <- c(5, 5, 1, 1)
+priors
+
+## define initial states
+iniStates <- c(S = 762, I = 1, B = 0, C = 0)
+
+## run PMCMC algorithm
+BS_mcmc <- PMCMC(BS_dat, priors, model, iniStates,
+                 npart = 100, niter = 2000)
+```
+
+We can visualise the MCMC chain and the approximate posterior distributions:
+
+```{r}
+## plot MCMC output
+plot(BS_mcmc, "trace")
+plot(BS_mcmc)
+```
+
+We may now want to run the chains for a bit longer. We can do this simply by passing our current `PMCMC` object back into the `PMCMC()` function:
+
+```{r}
+## run for a bit longer
+BS_mcmc <- PMCMC(BS_mcmc, niter = 8000)
+```
+
+```{r}
+## plot MCMC output
+plot(BS_mcmc, "trace")
+```
+
+This is an approximation, but is based around matching to more data points.
