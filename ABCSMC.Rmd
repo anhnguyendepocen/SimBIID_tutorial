@@ -89,6 +89,9 @@ model <- mparseRcpp(
     compartments = compartments,
     pars = pars
 )
+```
+
+```{r}
 model <- compileRcpp(model)
 model
 ```
