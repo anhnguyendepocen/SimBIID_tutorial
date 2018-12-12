@@ -6,3 +6,7 @@
 # ignore compiled files
 docs/
 _bookdown*
+
+# ignore installation files
+installSimBIID.R
+
