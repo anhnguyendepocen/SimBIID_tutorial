@@ -18,45 +18,18 @@ $$
     \end{align}\right.
 $$
 
-where $t_{int}$ is the time at which intervention strategies were introduced. The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only decays at the beginning of each day. Hence the transmission term becomes:
+where $t_{int}$ is the time at which intervention strategies were introduced. The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only changes after each event (in practice we would do this in a much better manner at the cost of additional computational loads).
 
-$$
-    \beta = \left\{
-    \begin{align}
-        &\beta & \mathrm{if}~t < t_{int},\\
-        &\beta e^{-q(\lfloor t \rfloor - t_{int})} & \mathrm{if}~t \geq t_{int},
-    \end{align}\right.
-$$
-where $\lfloor t \rfloor$ corresponds to rounding $t$ down to the nearest integer. Here $t_{int} = 126$, meaning that control interventions were introduced on day 126 of the outbreak. Hence the transmission rate between day 126 and 127 is:
-$$
-    \beta e^{-q(126 - 126)} = \beta,
-$$
-the transmission rate between day 127 and 128 is:
-$$
-    \beta e^{-q(127 - 126)} = \beta e^{-q},
-$$
-and so on. This behaviour can be captured in C by using the `floor()` function (which rounds down to the nearest integer). We also need to update our rate at each daily time-step. We can do this by passing a `afterTstar` argument to the `mparseRcpp()` function. This inserts a small piece of C code after each new event time has been simulated. In this case we wish to update the `beta` rate at each time point, therefore:
+To model this using our `mparseRcpp()` function, we need to add a little bit of additional C code to our model. In essence we need an **if-else** statement: **if** $t > t_{int}$, then multiply $\beta$ by $e^{-q(t - t_{int})}$, otherwise multiply it by 1. The C syntax for an if-else statement is of the form:
 
-```{r}
-## define a conditional statement to update the rates
-afterTstar <- "if(tstar > 126.0 && tstar < tstop) {
-    if(t < 126.0) {
-        t = 126.0;
-    }
-    while(tstar > floor(t + 1.0) && tstar < tstop){
-        t = floor(t + 1.0);
-        rates[0] = pars[0] * exp(-pars[3] * (t - 126.0)) * u[0] * u[1] / sum(u);
-        totrate = sum(rates);
-        tstar = t + R::rexp(1.0 / totrate);
-    }
-}"
+`(COND ? OUT1:OUT2)`
 
-```
+where `COND` is a condition, which if met outputs `OUT1`, else it outputs `OUT2`. Hence, to set up the model we can run:
 
 ```{r}
 ## set up model
 transitions <- c(
-    "S -> beta * S * I / (S + E + I + R) -> E", 
+    "S -> beta * exp((t > 126.0 ? (-q):0.0)) * S * I / (S + E + I + R) -> E", 
     "E -> delta * E -> I", 
     "I -> gamma * I -> R"
 )
@@ -65,14 +38,23 @@ pars <- c("beta", "delta", "gamma", "q")
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
-    pars = pars,
-    afterTstar = afterTstar
+    pars = pars
 )
 ```
 
 ```{r}
 model <- compileRcpp(model)
 model
+```
+
+```{task, title = "Question"}
+Why is this an approximation? Is it an OK approximation do you think? Could you suggest a better approximation?
+```
+
+```{solution, title = "Answer"}
+It's an approximation because we only update the rate every time there's an event. It might be an OK approximation, since if the rates are high, then we get lots of events and thus we update the infection rate more frequently. If rates are low, then we do not update the rates very frequently, but then the effect of the exponential decay is to set low rates after some period of time.
+
+A better appraoch might be to update the infection rate at some regular interval, such as at daily time steps.
 ```
 
 Now we can set priors and initial states:
@@ -88,25 +70,21 @@ priors$p1 <- rep(2, 4)
 priors$p2 <- c(10, 10, 1 / 0.07, 10)
 
 ## set initial states
-iniStates <- data.frame(S = 5364499, E = 0, I = 1, R = 0)
+iniStates <- c(S = 5364499, E = 0, I = 1, R = 0)
 ```
 
 Now we set up the data to match to (final epidemic size and date of final removal):
 
 ```{r}
 ## define the targeted summary statistics
-data <- data.frame(finalsize = 316, finaltime = 191)
+data <- c(finalsize = 316, finaltime = 191)
 ```
 
-Finally we set the number of particles and a sequence of tolerances:
+Finally we set a sequence of tolerances:
 
 ```{r}
-## set number of particles required
-npart <- 200
-
 ## set tolerances
 tols <- matrix(rep(round(seq(300, 40, length.out = 10)), each = 2), ncol = 2, byrow = T)
-tols <- as.data.frame(tols)
 colnames(tols) <- c("finalsize", "finaltime")
 ```
 
@@ -138,12 +116,100 @@ simEbola <- function(pars, data, tols, u, model) {
 }
 ```
 
-Now we run the ABC-SMC algorithm:
+```{r}
+## set seed
+set.seed(50)
+```
+
+Now we run the ABC-SMC algorithm (initially just for a single generation and for 10 particles---you'll see why in a moment):
 
 ```{r}
 ## run ABC-SMC algorithm
-post <- ABCSMC(data, priors, simEbola, iniStates, npart, tols, parallel = T, model = model)
+post <- ABCSMC(data, priors, simEbola, iniStates, 10, tols[1, ], parallel = T, model = model)
 ```
+
+```{r, fig.width = 8, fig.height = 8}
+## plot approximate posteriors
+plot(post)
+plot(post, "output")
+```
+
+```{task, title = "Question"}
+We can see that the first generation of our algorithm took a long time to run. Why do you think this was?
+```
+
+```{solution, title = "Answer"}
+This is for two main reasons. Firstly, the prior space is quite large relative to the posterior space, which means that a large number of parameters are generated that produce simulations that do not match the data. This means that lots of simulations have to be produce to get a fixed number of matches. Secondly, there is a large background population, which means that for some parameters we may simulate very large epidemics, which, although ultimately rejected, take a long time to evaluate.
+```
+
+## Speeding up simulations using stopping criteria
+
+One way to speed up the algorithms is to note that if we have summary statistics that are **monotonically** increasing, then we can monitor these criteria during the simulation and reject the simulation as soon as the simulated summary measure is greater than the observed summary measure by more than the tolerance. This means that we do not have to run the simulation to completion to reject it.
+
+We've already done this to a certain extent by only simulating up to time $T + \mbox{tol}_T$, where $T$ is the final removal time. The rationale was the same; if the epidemic is still ongoing at time $T + \mbox{tol}_T$, then by definition the difference between the simulated final removal time and the observed final removal time will be greater than the tolerance, and furthermore this distance will keep increasing. Hence we do not have to find out the exact final removal time in order to reject the simulation.
+
+Here we will use a `stopCrit` argument to `mparseRcpp()` to define additional stopping criteria, based on the other summary statistics. The argument is defined as a **conditional statement** that defines when to reject. For example, to add a stopping criterion based on the final epidemic size, we can reject once $R^* > R_F + \mbox{tol}_R$, where $R^*$ is the **simulated** number of removals and $R_F$ is the final epidemic size (the final **observed** number of removals). Hence,
+
+```{r}
+model <- mparseRcpp(
+    transitions = transitions,
+    compartments = compartments,
+    pars = pars,
+    addVars = c("finalsize", "tol_R"),
+    stopCrit = "R > (finalsize + tol_R)"
+)
+```
+
+Note that since the variables `finalsize` and `tol_R` do not exist in the model, we have to tell the parsing function to include them as additional arguments using the `addVars` argument. Once compiled, this adds to additional arguments to the `model()` function e.g.
+
+```{r}
+model <- compileRcpp(model)
+model
+```
+
+It is now up to us to make sure that we pass `finalsize` and `tol_R` to the `model()` function. We can do this by amending the `simEbola()` function we wrote earlier:
+
+```{r}
+## function to match simulations
+simEbola <- function(pars, data, tols, u, model) {
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u, data[1], tols[1])
+    
+    ## this returns a vector of the form:
+    ## completed (1/0), t, S, E, I, R (here)
+    if(sims[1] == 0) {
+        ## if simulation rejected
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- sims[2]
+        finalsize <- sims[6]
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime) - data) <= tols)){
+        return(c(finalsize, finaltime))
+    } else {
+        return(NA)
+    }
+}
+```
+
+Now we run again:
+
+```{r}
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simEbola, iniStates, 10, tols[1, ], parallel = T, model = model)
+```
+
+Now we can see that the first generation in particular runs much faster than before since some simulations can be rejected sooner without loss of accuracy. Now we will increase the number of particles and run properly.
+
+```{r}
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simEbola, iniStates, 50, tols, parallel = T, model = model)
+```
+
+Once we have a set of (approximate) posterior samples, we can create posteriors for derived variables of interest, such as $R_0$, the mean infectious period, and the mean incubation period:
 
 ```{r}
 ## function to calculate R0 and length of
@@ -156,21 +222,10 @@ R0fn <- function(beta, delta, gamma) {
 summary(post, transfunc = R0fn)
 ```
 
-```{r, fig.width = 8, fig.height = 8}
-## plot approximate posteriors
-plot(post, transfunc = R0fn, gen = c(1, 5, 10))
-```
-
-```{r}
-## plot accepted outputs
-plot(post, "output", gen = c(1, 5, 10))
-```
-
-This ran relatively quickly, so now run for another few generations...
+Since this ran relatively quickly, we'll now run for another few generations...
 
 ```{r}
 tols <- matrix(rep(seq(30, 10, by = -10), each = 2), ncol = 2, byrow = T)
-tols <- as.data.frame(tols)
 colnames(tols) <- c("finalsize", "finaltime")
 
 ## run ABC-SMC algorithm
@@ -193,79 +248,3 @@ plot(post, transfunc = R0fn, gen = c(1, 5, 13))
 ## plot accepted outputs
 plot(post, "output", gen = c(1, 5, 13))
 ```
-
-<!-- ## Speeding up simulations using stopping criteria -->
-
-<!-- One way to speed up the algorithms is to note that if we have summary statistics that are **monotonically** increasing, then we can monitor these criteria during the simulation and reject the simulation as soon as the simulated summary measure is greater than the observed summary measure by more than the tolerance. This means that we do not have to run the simulation to completion to reject it. -->
-
-<!-- We've already done this to a certain extent by only simulating up to time $T + \mbox{tol}$, where $T$ is the final removal time. The rationale was the same; if the epidemic is still ongoing at time $T + \mbox{tol}$, then by definition the difference between the simulated final removal time and the observed final removal time will be greater than the tolerance, and furthermore this distance will keep increasing. Hence we do not have to find out the exact final removal time in order to reject the simulation. -->
-
-<!-- Here we will use a `stopCrit` argument to `mparseRcpp()` to define additional stopping criteria, based on the other summary statistics. The argument is defined as a **conditional statement** that defines when to reject. For example, to add a stopping criterion based on the final epidemic size, we can reject once $C^* > C_F + \mbox{tol}$, where $C^*$ is the **simulated** number of convalescences and $C_F$ is the final **observed** number of convalescences. Hence, -->
-
-<!-- ```{r} -->
-<!-- model <- mparseRcpp( -->
-<!--     transitions = transitions,  -->
-<!--     compartments = compartments, -->
-<!--     pars = pars, -->
-<!--     tspan = T, -->
-<!--     addVars = c("CF", "tolF"), -->
-<!--     stopCrit = "u[3] > (CF + tolF)" -->
-<!-- ) -->
-<!-- model <- compileRcpp(model) -->
-<!-- model -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- ## set up function to perform simulation and check matching -->
-<!-- simBS <- function(pars, data, tols, u, model, tspan, B, CF) { -->
-
-<!--     ## run model -->
-<!--     sims <- model(pars, 0, data[2] + tols[2], u, tspan, CF, tols[1]) -->
-
-<!--     ## this returns a matrix with columns of the form: -->
-<!--     ## completed (1/0), t, S, I, B, C (here) -->
-<!--     ## the final row is the summary of the epidemic -->
-<!--     ## at the final time point (as if tspan had not  -->
-<!--     ## been used) -->
-<!--     ## -->
-<!--     ## the earlier rows correspond to states of the  -->
-<!--     ## system at each time point t (the 'completed' -->
-<!--     ## column is extraneous here, and so is set to NA) -->
-<!--     ## -->
-<!--     ## Firstly, separate the time-series counts from the -->
-<!--     ## final epidemic summaries -->
-<!--     simSum <- sims[nrow(sims), ] -->
-<!--     counts <- sims[-nrow(sims), -1] -->
-<!--     if(simSum[1] == 0) { -->
-<!--         ## if simulation rejected -->
-<!--         return(NA) -->
-<!--     } else { -->
-<!--         ## extract finaltime and finalsize -->
-<!--         finaltime <- simSum[2] -->
-<!--         finalsize <- simSum[6] -->
-
-<!--         ## calculate sum-of-squared distances of -->
-<!--         ## simulations from observations -->
-<!--         SB <- sum((B - counts[, 2])^2) -->
-<!--     } -->
-
-<!--     ## return vector if match, else return NA -->
-<!--     if(all(abs(c(finalsize, finaltime, SB) - data) <= tols)){ -->
-<!--         return(c(finalsize, finaltime, SB)) -->
-<!--     } else { -->
-<!--         return(NA) -->
-<!--     } -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- ```{r, fig.width = 8, fig.height = 4} -->
-<!-- ## run ABC-SMC algorithm -->
-<!-- post <- ABCSMC(sumStat, priors, simBS, iniStates, npart,  -->
-<!--                tols, parallel = T,  -->
-<!--                model = model, tspan = BS$day, B = BS$B, CF = finalsize) -->
-
-<!-- ## plot approximate posteriors and simulated -->
-<!-- ## summary statistics -->
-<!-- plot(post) -->
-<!-- plot(post, "output") -->
-<!-- ``` -->
