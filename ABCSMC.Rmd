@@ -229,6 +229,7 @@ model <- mparseRcpp(
 model <- compileRcpp(model)
 model
 ```
+
 You can now see that the new function has an additional `tspan` argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a `tspan` argument to our `simBS` function. In addition, we will also need to pass the observed time-series counts to this function (which we call `B` here).
 
 ```{r}
