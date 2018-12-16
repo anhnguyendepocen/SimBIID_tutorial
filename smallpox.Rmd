@@ -30,7 +30,7 @@ Although simple, these two measures serve to give us some information on both th
 
 ## Simulation model
 
-In order to use the `ABCSMC` function, we need to define a function that runs the simulations and returns an `NA` if the simulation is rejected, or a vector of summary statistics if it is not.
+In order to use the `ABCSMC()` function, we need to define a function that runs the simulations and returns an `NA` if the simulation is rejected, or a vector of summary statistics if it is not.
 
 > **Note**: one thing to be careful of for this particular system, is that the data are aligned to time 0 being the time of the first *removal*, not *infection*. Just for illustration, we are going to simplify things in the first instance, and assume that the first infection happens 10 days before the first removal, which corresponds to adding 10 days to each of our observed removal times.
 
@@ -41,12 +41,23 @@ Copy-and-paste the function below. Go through this function and understand what 
 ## 10 days before first removal
 smallpox <- smallpox + 10
 
-## extract data
-finaltime <- max(smallpox)
+## define the targeted summary statistics
+data <- c(
+    finalsize = length(smallpox), 
+    finaltime = max(smallpox)
+)
 
 ## set initial states (1 initial infection in population of 120)
-iniStates <- data.frame(S = 119, I = 1, R = 0)
+iniStates <- c(S = 119, I = 1, R = 0)
+```
 
+```{task}
+Set up an SIR model using `mparseRcpp()` to simulate smallpox outbreaks. Check that the model compiles.
+```
+
+```{solution}
+
+``{r}
 ## set up models
 transitions <- c(
     "S -> beta * S * I -> I", 
@@ -59,11 +70,20 @@ model <- mparseRcpp(
     compartments = compartments,
     pars = pars
 )
-```
-
-```{r}
 ## compile model for use in ABC
 model <- compileRcpp(model)
+model
+``
+
+```
+
+```{task}
+Write a function called `simSIR` that is used to simulate an outbreak and extract the relevant summary statistics from the model runs. the function needs to take at least the arguments: `pars`, `data`, `tols`, `u`, and return an `NA` if no match, or a vector of summary statistics if there is a match.
+```
+
+```{solution}
+
+``{r}
     
 ## set up function to perform simulation
 simSIR <- function(pars, data, tols, u, model) {
@@ -88,21 +108,17 @@ simSIR <- function(pars, data, tols, u, model) {
         return(NA)
     }
 }
+``
+
 ```
 
-## ABC routine
+```{task}
+Set up a set of gamma prior distributions for $\beta$ and $\gamma$, with shape parameter 10 in both cases, but rate parameters of 10,000 and 100 respectively.
+```
 
-Here we are going to use the sequential ABC routine of [@tonietal:2009]. Here we need to set the number of particles ($n = 50$), and a vector of tolerances, which also defines the number of generations. In the first instance I'm going to use 10 generations, moving from $\epsilon = 100$ to $\epsilon = 20$. When passing arguments to the `ABCSMC` function, note that `tols`, `priors` and `data` must all be `data.frame` objects (see `?ABCSMC`):
+```{solution}
 
-```{r}
-# set number of particles required
-npart <- 50
-
-## set tolerances
-tols <- matrix(rep(seq(50, 20, by = -10), each = 2), ncol = 2, byrow = T)
-tols <- as.data.frame(tols)
-colnames(tols) <- c("finalsize", "finaltime")
-
+``{r}
 ## set priors
 priors <- data.frame(
     parnames = c("beta", "gamma"), 
@@ -111,123 +127,44 @@ priors <- data.frame(
 )
 priors$p1 <- c(10, 10)
 priors$p2 <- c(10^4, 10^2)
+``
 
-## define the targeted summary statistics
-data <- data.frame(
-    finalsize = length(smallpox), 
-    finaltime = max(smallpox)
+```
+
+```{task}
+Run 3 generations of the sequential ABC routine of [@tonietal:2009] using starting tolerances of $\epsilon = 50$ and `ptol = 0.2`.
+```
+
+```{solution}
+
+``{r}
+## set tolerances
+tols <- c(
+    finalsize = 50,
+    finaltime = 50
 )
-```
 
-Now we can run a few generations of ABC-SMC:
-
-```{r}
 ## run ABC-SMC algorithm
-post <- ABCSMC(data, priors, simSIR, iniStates, npart, tols, parallel = T, model = model)
+post <- ABCSMC(data, priors, simSIR, iniStates, 50, tols, ptol = 0.2, ngen = 3, parallel = T, model = model)
+``
+
 ```
 
-Now we can plot the generations of ABC as follows:
+```{task}
+Plot the approximate posteriors and simulated outcomes. Produce posterior mean and SD estimates for the parameters.
+```
 
-```{r, fig.width = 10, fig.height = 5}
+```{solution}
+
+``{r, fig.width = 10, fig.height = 5}
 ## plot approximate posteriors
 plot(post)
 
 ## plot accepted outputs
 plot(post, "output")
-```
 
-Now run for another few generations.
-
-```{r}
-tols <- matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T)
-tols <- as.data.frame(tols)
-colnames(tols) <- c("finalsize", "finaltime")
-
-## run ABC-SMC algorithm
-post <- ABCSMC(post, tols, parallel = T)
-```
-
-We can also choose which generations to plot using the `gen` argument to `plot()` e.g.
-
-```{r, fig.width = 10, fig.height = 5}
-## plot approximate posteriors
-plot(post, gen = c(1, 5, 7))
-
-## plot accepted outputs
-plot(post, "output", gen = c(1, 5, 7))
-```
-
-We can also produce joint density plots (if the `GGally` package is installed):
-
-```{r, fig.width = 6, fig.height = 6}
-## joint distributions
-plot(post, gen = c(1, 5, 7), joint = T)
-```
-
-A call to `summary()` produces weighted estimates for the posterior means and standard deviations for the parameters:
-
-```{r}
+## summarise posteriors
 summary(post)
-```
+``
 
-## Calculate posterior for $R_0$
-
-We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a `transfunc` argument to the `summary()` method (this function must return a `data.frame` object). For example, as discussed in the lecture, if we have $\beta$ and $\gamma$, then we can also calculate the marginal posterior distribution for $R_0$ (here defined as $R_0 = \frac{N \beta}{\gamma}$), as well as, let's say, the length of the infectious period. Hence:
-
-```{r}
-## function to calculate R0 and infectious period
-R0fn <- function(beta, gamma) {
-    data.frame(R0 = 120 * beta / gamma, infperiod = 1 / gamma)
-}
-summary(post, transfunc = R0fn)
-```
-
-We can plot distributions for transformed variables in a similar way:
-
-```{r, fig.width = 8, fig.height = 4}
-## plot distribution for R0
-plot(post, transfunc = R0fn, gen = c(1, 5, 7))
-```
-
-```{r, fig.width = 8, fig.height = 8}
-## plot joint distributions
-plot(post, transfunc = R0fn, gen = c(1, 5, 7), joint = T)
-```
-
-Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is less than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie below one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate an estimate as below.)
-
-```{r, eval = F}
-## function to calculate whether R0 > 1
-R0gt <- function(beta, gamma) {
-    data.frame(R0gt = as.numeric((120 * beta / gamma) > 1))
-}
-summary(post, transfunc = R0gt)
-```
-
-## Vague priors
-
-Let's try the same routine with less informative priors. 
-
-```{r, fig.width = 8, fig.height = 4, eval = F}
-## set priors
-priors$p1 <- c(1, 1)
-priors$p2 <- c(1, 1)
-
-## set tolerances as before
-tols <- matrix(rep(seq(50, 20, by = -10), each = 2), ncol = 2, byrow = T)
-tols <- rbind(tols, matrix(rep(seq(15, 5, by = -5), each = 2), ncol = 2, byrow = T))
-tols <- as.data.frame(tols)
-colnames(tols) <- c("finalsize", "finaltime")
-
-## run ABC-SMC algorithm
-post <- ABCSMC(data, priors, simSIR, iniStates, npart, tols, parallel = T, model = model)
-
-## summarise approximate posterior
-summary(post, transfunc = R0fn)
-
-## plot approximate posteriors
-plot(post, transfunc = R0fn, gen = c(1, 5, 7))
-
-## plot accepted outputs
-plot(post, "output", gen = c(1, 5, 7))
 ```
