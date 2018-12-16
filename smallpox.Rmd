@@ -2,7 +2,7 @@
 
 Firstly, load in the data:
 
-```{r}
+```{r, smallpox-data}
 ## read in the data and convert to vector
 smallpox <- as.numeric(unlist(read.table("smallpox.txt", header = F)))
 summary(smallpox)
@@ -36,7 +36,7 @@ In order to use the `ABCSMC()` function, we need to define a function that runs 
 
 Copy-and-paste the function below. Go through this function and understand what each line is doing.
 
-```{r}
+```{r, smallpox-setup}
 ## reset times so that initial infection occurs
 ## 10 days before first removal
 smallpox <- smallpox + 10
@@ -57,7 +57,7 @@ Set up an SIR model using `mparseRcpp()` to simulate smallpox outbreaks. Check t
 
 ```{solution}
 
-``{r}
+``{r, smallpox-solsetup}
 ## set up models
 transitions <- c(
     "S -> beta * S * I -> I", 
@@ -83,7 +83,7 @@ Write a function called `simSIR` that is used to simulate an outbreak and extrac
 
 ```{solution}
 
-``{r}
+``{r,smallpox-solfunc}
     
 ## set up function to perform simulation
 simSIR <- function(pars, data, tols, u, model) {
@@ -118,7 +118,7 @@ Set up a set of gamma prior distributions for $\beta$ and $\gamma$, with shape p
 
 ```{solution}
 
-``{r}
+``{r, smallpox-solpriors}
 ## set priors
 priors <- data.frame(
     parnames = c("beta", "gamma"), 
@@ -137,7 +137,7 @@ Run 3 generations of the sequential ABC routine of [@tonietal:2009] using starti
 
 ```{solution}
 
-``{r}
+``{r, smallpox-solabc}
 ## set tolerances
 tols <- c(
     finalsize = 50,
@@ -156,7 +156,7 @@ Plot the approximate posteriors and simulated outcomes. Produce posterior mean a
 
 ```{solution}
 
-``{r, fig.width = 10, fig.height = 5}
+``{r, smallpox-solplot, fig.width = 10, fig.height = 5}
 ## plot approximate posteriors
 plot(post)
 

@@ -14,7 +14,7 @@ The event probabilities are:
 
 Here we are going to match to the final epidemic size (512 children), and the sum-of-squared differences between the observed bed-rest counts (given by `BS$B`) and the simulated bed-rest counts (given by the $B$ class in our model). The initial population size is 763 pupils, and we assume an initial introduction of infection of a single boy at day 0.
 
-```{r, message = F, warning = F}
+```{r, case-BS, message = F, warning = F}
 ## load data
 BS <- read.csv("BS.csv", header = T)
 

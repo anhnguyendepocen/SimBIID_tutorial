@@ -26,7 +26,7 @@ To model this using our `mparseRcpp()` function, we need to add a little bit of 
 
 where `COND` is a condition, which if met outputs `OUT1`, else it outputs `OUT2`. Hence, to set up the model we can run:
 
-```{r}
+```{r, ebola-setmod}
 ## set up model
 transitions <- c(
     "S -> beta * exp((t > 126.0 ? (-q):0.0)) * S * I / (S + E + I + R) -> E", 
@@ -42,7 +42,7 @@ model <- mparseRcpp(
 )
 ```
 
-```{r}
+```{r, ebola-compmod}
 model <- compileRcpp(model)
 model
 ```
@@ -59,7 +59,7 @@ A better appraoch might be to update the infection rate at some regular interval
 
 Now we can set priors and initial states:
 
-```{r}
+```{r, ebola-setpriors}
 ## set priors
 priors <- data.frame(
     parnames = c("beta", "delta", "gamma", "q"), 
@@ -75,14 +75,14 @@ iniStates <- c(S = 5364499, E = 0, I = 1, R = 0)
 
 Now we set up the data to match to (final epidemic size and date of final removal):
 
-```{r}
+```{r, ebola-data}
 ## define the targeted summary statistics
 data <- c(finalsize = 316, finaltime = 191)
 ```
 
 Finally we set a sequence of tolerances:
 
-```{r}
+```{r, ebola-tols}
 ## set tolerances
 tols <- matrix(rep(round(seq(300, 40, length.out = 10)), each = 2), ncol = 2, byrow = T)
 colnames(tols) <- c("finalsize", "finaltime")
@@ -90,7 +90,7 @@ colnames(tols) <- c("finalsize", "finaltime")
 
 We then set up a function to run the model, extract the final epidemic size and date of the final removal, and return the relevant measures:
 
-```{r}
+```{r, ebola-func}
 ## function to match simulations
 simEbola <- function(pars, data, tols, u, model) {
     ## run model
@@ -116,19 +116,19 @@ simEbola <- function(pars, data, tols, u, model) {
 }
 ```
 
-```{r}
+```{r, ebola-seed}
 ## set seed
 set.seed(50)
 ```
 
 Now we run the ABC-SMC algorithm (initially just for a single generation and for 10 particles---you'll see why in a moment):
 
-```{r}
+```{r, ebola-abcsmc}
 ## run ABC-SMC algorithm
 post <- ABCSMC(data, priors, simEbola, iniStates, 10, tols[1, ], parallel = T, model = model)
 ```
 
-```{r, fig.width = 8, fig.height = 8}
+```{r, ebola-plot, fig.width = 8, fig.height = 8}
 ## plot approximate posteriors
 plot(post)
 plot(post, "output")
@@ -150,7 +150,7 @@ We've already done this to a certain extent by only simulating up to time $T + \
 
 Here we will use a `stopCrit` argument to `mparseRcpp()` to define additional stopping criteria, based on the other summary statistics. The argument is defined as a **conditional statement** that defines when to reject. For example, to add a stopping criterion based on the final epidemic size, we can reject once $R^* > R_F + \epsilon_R$, where $R^*$ is the **simulated** number of removals and $R_F$ is the final epidemic size (the final **observed** number of removals). Hence,
 
-```{r}
+```{r, ebola-setstop}
 model <- mparseRcpp(
     transitions = transitions,
     compartments = compartments,
@@ -162,14 +162,14 @@ model <- mparseRcpp(
 
 Note that since the variables `finalsize` and `tol_R` do not exist in the model, we have to tell the parsing function to include them as additional arguments using the `addVars` argument. Once compiled, this adds to additional arguments to the `model()` function e.g.
 
-```{r}
+```{r, ebola-compmod1}
 model <- compileRcpp(model)
 model
 ```
 
 It is now up to us to make sure that we pass `finalsize` and `tol_R` to the `model()` function. We can do this by amending the `simEbola()` function we wrote earlier:
 
-```{r}
+```{r, ebola-func1}
 ## function to match simulations
 simEbola <- function(pars, data, tols, u, model) {
     ## run model
@@ -197,21 +197,21 @@ simEbola <- function(pars, data, tols, u, model) {
 
 Now we run again:
 
-```{r}
+```{r, ebola-abcsmc1}
 ## run ABC-SMC algorithm
 post <- ABCSMC(data, priors, simEbola, iniStates, 10, tols[1, ], parallel = T, model = model)
 ```
 
 Now we can see that the first generation in particular runs much faster than before since some simulations can be rejected sooner without loss of accuracy. Now we will increase the number of particles and run properly.
 
-```{r}
+```{r, ebola-abcsmc2}
 ## run ABC-SMC algorithm
 post <- ABCSMC(data, priors, simEbola, iniStates, 50, tols, parallel = T, model = model)
 ```
 
 Once we have a set of (approximate) posterior samples, we can create posteriors for derived variables of interest, such as $R_0$, the mean infectious period, and the mean incubation period:
 
-```{r}
+```{r, ebola-R0}
 ## function to calculate R0 and length of
 ## epidemiological periods
 R0fn <- function(beta, delta, gamma) {
@@ -224,7 +224,7 @@ summary(post, transfunc = R0fn)
 
 Since this ran relatively quickly, we'll now run for another few generations...
 
-```{r}
+```{r, ebola-tols1}
 tols <- matrix(rep(seq(30, 10, by = -10), each = 2), ncol = 2, byrow = T)
 colnames(tols) <- c("finalsize", "finaltime")
 
@@ -234,17 +234,17 @@ post <- ABCSMC(post, tols, parallel = T)
 
 Now summarise the outputs:
 
-```{r, fig.width = 10, fig.height = 5}
+```{r, ebola-sum, fig.width = 10, fig.height = 5}
 ## summarise approximate posterior
 summary(post, transfunc = R0fn)
 ```
 
-```{r, fig.width = 8, fig.height = 8}
+```{r, ebola-plotR0, fig.width = 8, fig.height = 8}
 ## plot approximate posteriors
 plot(post, transfunc = R0fn, gen = c(1, 5, 13))
 ```
 
-```{r}
+```{r, ebola-plotoutput}
 ## plot accepted outputs
 plot(post, "output", gen = c(1, 5, 13))
 ```

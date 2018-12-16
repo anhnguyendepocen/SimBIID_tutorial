@@ -21,7 +21,7 @@ description: "Inference in infectious disease systems practicals"
 
 # Introduction
 
-```{r, child = "_setup.Rmd", include = F, purl = F, cache = F}
+```{r, setup, child = "_setup.Rmd", include = F, purl = F, cache = F}
 ```
 
 The purpose of this document is to run some ABC-SMC routines using the (current) `SimBIID` package (Simulation-Based Inference for Infectious Disease models). I am heavily indebted to Stefan Widgren for his fantastic [SimInf](https://cran.r-project.org/web/packages/SimInf/index.html) package, and indeed I shamelessly borrow some of his ideas (such as the `mparse()` function).

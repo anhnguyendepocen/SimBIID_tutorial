@@ -2,7 +2,7 @@
 
 Here we will run the ABC-SMC routine of Toni et al. (2009).
 
-```{r, include = F}
+```{r, abc-sums, include = F}
 ## extract summaries
 finaltime <- max(BS$day)
 finalsize <- 512
@@ -21,7 +21,7 @@ Although simple, these two measures serve to give us some information on both th
 
 In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous section, and specify a model using the `mparseRcpp()` function. The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see that the first argument to the function must be either an `ABCSMC` object (we will come to this later), or a named `vector` with entries containing the observed summary statistics to match to. Let's create this data object:
 
-```{r}
+```{r, abc-sums1}
 ## create vector of summary statistics
 sumStat <- c(finalsize = 512, finaltime = max(BS$day))
 sumStat
@@ -29,7 +29,7 @@ sumStat
 
 The second argument must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$, $\mu_I \sim U(0, 5)$ and $\mu_B \sim U(0, 1)$. We can specify this as follows:
 
-```{r}
+```{r, abc-priors}
 ## set priors
 priors <- data.frame(parnames = c("beta", "muI", "muB"), 
                      dist = rep("unif", 3), stringsAsFactors = F)
@@ -51,7 +51,7 @@ The third argument is a function that runs the simulator and checks whether the 
 
 If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `length(data)` and with entries in the same order as `data`. It is possible to add further arguments to this function, as long as they appear after `pars`, `data`, `tols` and `u`. For example, in our case we are going to pass our simulation model in as an additional argument called `model` e.g.
 
-```{r}
+```{r, abc-func}
 ## set up function to perform simulation and check matching
 simBS <- function(pars, data, tols, u, model) {
     
@@ -83,7 +83,7 @@ simBS <- function(pars, data, tols, u, model) {
 
 Hence, to specify and compile the model we can run:
 
-```{r}
+```{r, abc-model}
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
@@ -91,7 +91,7 @@ model <- mparseRcpp(
 )
 ```
 
-```{r}
+```{r, abc-compmod}
 model <- compileRcpp(model)
 model
 ```
@@ -106,14 +106,14 @@ We can then either specify a `matrix` of tolerances to match to (these must be d
 
 > **Note**: the names and order of the tolerances must match the `x` argument.
 
-```{r}
+```{r, abc-tols}
 ## set tolerances
 tols <- c(finalsize = 50, finaltime = 50)
 ```
 
 Now let's run the routine for `ngen = 4` generations of ABC, with `ptols = 0.5` using 50 particles. Notice that we can pass the additional arguments that `simBS()` needs (`model` in this case) as additional arguments passed to `ABCSMC()`:
 
-```{r}
+```{r, abc-abc}
 ## run ABC-SMC algorithm
 post <- ABCSMC(
     x = sumStat, 
@@ -132,25 +132,25 @@ post <- ABCSMC(
 
 We can plot the approximate posterior distributions over the generations as follows:
 
-```{r, fig.width = 8, fig.height = 4}
+```{r, abc-plot, fig.width = 8, fig.height = 4}
 ## plot approximate posteriors
 plot(post)
 ```
 
 We can plot the simulated summary statistics from the accepted particles at each generation as:
 
-```{r, fig.width = 8, fig.height = 4}
+```{r, abc-plot1, fig.width = 8, fig.height = 4}
 plot(post, type = "output")
 ```
 
 Given the speed of the simulations, let's try running for a few more generations. We can pass the current `ABCSMC` object (`post` here) back into the `ABCSMC()` function and run for a few more generations:
 
-```{r, fig.width = 8, fig.height = 4}
+```{r, abc-abc1, fig.width = 8, fig.height = 4}
 ## run for a few more generations
 post <- ABCSMC(x = post, ptols = 0.5, ngen = 3, parallel = T)
 ```
 
-```{r}
+```{r, abc-plot2}
 ## plot approximate posteriors and simulated
 ## summary statistics
 plot(post)
@@ -159,7 +159,7 @@ plot(post, "output")
 
 Notice how the approximate posteriors are tightening up as we require to match more precisely. Notice also that the acceptance rate of each generation of ABC-SMC drops as the tolerances decrease. In fact we can see this more clearly if we plot just the first and final generation. Fortunately, we can choose which generations to plot using the `gen` argument to `plot()` e.g.
 
-```{r, fig.width = 8, fig.height = 4}
+```{r, abc-plot3, fig.width = 8, fig.height = 4}
 ## plot approximate posteriors
 plot(post, gen = c(1, 7))
 
@@ -169,14 +169,14 @@ plot(post, "output", gen = c(1, 7))
 
 We can also produce joint density plots (if the `GGally` package is installed):
 
-```{r, fig.width = 6, fig.height = 6}
+```{r, abc-plot4, fig.width = 6, fig.height = 6}
 ## joint distributions
 plot(post, gen = c(1, 7), joint = T)
 ```
 
 A call to `summary()` produces weighted estimates for the posterior means and standard deviations for the parameters in the final generation:
 
-```{r}
+```{r, abc-sum}
 summary(post)
 ```
 
@@ -184,7 +184,7 @@ summary(post)
 
 We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a `transfunc` argument to the `summary()` method (this function must return a `data.frame` object). For example, as discussed in the lecture, if we have $\beta$ and $\mu_I$, then we can also calculate the marginal posterior distribution for $R_0$ (here defined as $R_0 = \frac{\beta}{\mu_I}$), as well as, let's say, the length of the infectious period. Hence:
 
-```{r}
+```{r, abc-R0}
 ## function to calculate R0 and infectious period
 R0fn <- function(beta, muI) {
     data.frame(R0 = beta / muI, infperiod = 1 / muI)
@@ -194,14 +194,14 @@ summary(post, transfunc = R0fn)
 
 We can plot distributions for transformed variables in a similar way:
 
-```{r, fig.width = 8, fig.height = 4}
+```{r, abc-plot5, fig.width = 8, fig.height = 4}
 ## plot distribution for R0
 plot(post, transfunc = R0fn, gen = c(1, 7))
 ```
 
 Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is greater than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie above one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate an estimate as below.)
 
-```{r}
+```{r, abc-R01}
 ## function to calculate whether R0 > 1
 R0gt <- function(beta, muI) {
     data.frame(R0gt = as.numeric((beta / muI) > 1))
@@ -219,7 +219,7 @@ where $B_t$ is the **observed** counts at time $t$, and $B^*_t$ are the correspo
 
 To calculate $S_B$, we have to re-compile the model with the `tspan` option turned on.
 
-```{r}
+```{r, abc-model2}
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
@@ -232,7 +232,7 @@ model
 
 You can now see that the new function has an additional `tspan` argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a `tspan` argument to our `simBS` function. In addition, we will also need to pass the observed time-series counts to this function (which we call `B` here).
 
-```{r}
+```{r, abc-func2}
 ## set up function to perform simulation and check matching
 simBS <- function(pars, data, tols, u, model, tspan, B) {
     
@@ -270,7 +270,7 @@ simBS <- function(pars, data, tols, u, model, tspan, B) {
 
 To create some initial tolerances, let's append an initial value for `SB` to our original `tols` object:
 
-```{r, fig.width = 8, fig.height = 4}
+```{r, abc-tols2, fig.width = 8, fig.height = 4}
 ## set up new set of tolerances
 tols <- c(tols, SB = 1e6)
 
@@ -280,7 +280,7 @@ sumStat <- c(sumStat, SB = 0)
 
 Now we can run our routine again (notice the final row below contains the additional arguments we now need for `simBS()`):
 
-```{r}
+```{r, abc-abc3}
 ## run ABC-SMC algorithm
 post <- ABCSMC(
     x = sumStat, 
@@ -296,7 +296,7 @@ post <- ABCSMC(
 )
 ```
 
-```{r}
+```{r, abc-plot6}
 ## plot approximate posteriors and simulated
 ## summary statistics
 plot(post)
@@ -309,7 +309,7 @@ Add another summary measure corresponding to the sum-of-squared distances betwee
 
 ```{solution}
 
-``{r}
+``{r, abc-solfunc}
 ## set up function to perform simulation and check matching
 simBS <- function(pars, data, tols, u, model, tspan, B, C) {
     
@@ -348,14 +348,14 @@ simBS <- function(pars, data, tols, u, model, tspan, B, C) {
 
 To create a sequence of tolerances:
 
-``{r}
+``{r, abc-soltol}
 ## set initial tolerances
 tols <- c(tols, SC = 1e6)
 ``
 
 Finally set up the data to match to and run the model:
 
-``{r}
+``{r, abc-solabc}
 ## set up data to match to
 sumStat <- c(sumStat, SC = 0)
 
