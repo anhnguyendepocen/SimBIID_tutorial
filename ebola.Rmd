@@ -54,7 +54,7 @@ Why is this an approximation? Is it an OK approximation do you think? Could you 
 ```{solution, title = "Answer"}
 It's an approximation because we only update the rate every time there's an event. It might be an OK approximation, since if the rates are high, then we get lots of events and thus we update the infection rate more frequently. If rates are low, then we do not update the rates very frequently, but then the effect of the exponential decay is to set low rates after some period of time.
 
-A better appraoch might be to update the infection rate at some regular interval, such as at daily time steps.
+A better approach might be to update the infection rate at some regular interval, such as at daily time steps.
 ```
 
 Now we can set priors and initial states:
@@ -126,12 +126,6 @@ Now we run the ABC-SMC algorithm (initially just for a single generation and for
 ```{r, ebola-abcsmc}
 ## run ABC-SMC algorithm
 post <- ABCSMC(data, priors, simEbola, iniStates, 10, tols[1, ], parallel = T, model = model)
-```
-
-```{r, ebola-plot, fig.width = 8, fig.height = 8}
-## plot approximate posteriors
-plot(post)
-plot(post, "output")
 ```
 
 ```{task, title = "Question"}
@@ -209,19 +203,6 @@ Now we can see that the first generation in particular runs much faster than bef
 post <- ABCSMC(data, priors, simEbola, iniStates, 50, tols, parallel = T, model = model)
 ```
 
-Once we have a set of (approximate) posterior samples, we can create posteriors for derived variables of interest, such as $R_0$, the mean infectious period, and the mean incubation period:
-
-```{r, ebola-R0}
-## function to calculate R0 and length of
-## epidemiological periods
-R0fn <- function(beta, delta, gamma) {
-    data.frame(R0 = beta / gamma, latperiod = 1 / delta, infperiod = 1 / gamma)
-}
-
-## summarise approximate posterior
-summary(post, transfunc = R0fn)
-```
-
 Since this ran relatively quickly, we'll now run for another few generations...
 
 ```{r, ebola-tols1}
@@ -232,19 +213,165 @@ colnames(tols) <- c("finalsize", "finaltime")
 post <- ABCSMC(post, tols, parallel = T)
 ```
 
-Now summarise the outputs:
+```{task}
+Produce posterior summary estimates for the derived variables of interest: $R_0$, the mean infectious period, and the mean incubation period. Plot the approximate posteriors and simulated outputs.
+```
 
-```{r, ebola-sum, fig.width = 10, fig.height = 5}
+```{solution}
+
+``{r, ebola-R0}
+## function to calculate R0 and length of
+## epidemiological periods
+R0fn <- function(beta, delta, gamma) {
+    data.frame(
+        R0 = beta / gamma, 
+        latperiod = 1 / delta, 
+        infperiod = 1 / gamma
+    )
+}
+
 ## summarise approximate posterior
 summary(post, transfunc = R0fn)
-```
+``
 
-```{r, ebola-plotR0, fig.width = 8, fig.height = 8}
+``{r, ebola-plotR0, fig.width = 8, fig.height = 8}
 ## plot approximate posteriors
 plot(post, transfunc = R0fn, gen = c(1, 5, 13))
-```
+``
 
-```{r, ebola-plotoutput}
+``{r, ebola-plotoutput}
 ## plot accepted outputs
 plot(post, "output", gen = c(1, 5, 13))
+``
+
 ```
+
+## **Advanced task**: Working with more complex summary measures
+
+The full data can be found in the "ebola.csv" file. The first column corresponds to the day from the introduction of the index case into the population. The second column corresponds to time series counts of the number of new cases exhibiting clinical signs at the end of each day. The final column contains time series counts of the number of removals at each time point.
+
+We use the `clin_signs` column as a proxy for the $I$ **incidence** (not counts directly, rather **new** incidents at each day), and the `removals` column as a proxy for the $R$ **incidence**. Read the data into R as follows:
+    
+```{r, ebola-data}
+ebola <- read.csv("ebola.csv", header = T)
+head(ebola)
+```
+
+Notice that if we sum the events down each column we get different numbers of events. We know that the total epidemic size was 315, and hence we have `r 315 - sum(ebola$clin_signs)` missing $I$ events and `r 315 - sum(ebola$removals)` missing $R$ events.
+
+```{task}
+Amend the code above to add in a chi-squared distance metric (see below) between the simulated $I$ curve and the observed data curve (`clin_signs`), and also the simulated $R$ curve and the observed data curve (`removals`). **Note**: the simulations produce the **number of individuals** in each class at time $t$, whereas the data are the number of **new individuals** in each class at time $t$.
+
+Another complexity is that monitoring of the epidemic did not start until day 55, and so we do not start generating the summary statistics until after that time point. Hence the chi-squared metric is defined as follows:
+$$
+    X^2 = \sum_{t = 55}^T \frac{(E_t - O_t)^2}{\max\left(O_t, 1\right)},
+$$
+where $O_t$ is the **observed** count at time $t$, and $E_t$ is the **simulated** count at time $t$ (notice that we don't start cumulating until day 55).
+
+To calculate **removal incidence** we note that the number of removals at day $t$ is simply the number of removals at day $t - 1$ plus the number of new removals that occur in $(t - 1, t]$ (the **removal incidence**, denoted $i^R_t$) e.g.
+$$
+    R_t = R_{t - 1} + i^R_t,
+$$ 
+which implies that
+$$
+    i^R_t = R_t - R_{t - 1}.
+$$
+We can do a similar thing with the **infection incidence**, by noting that:
+$$
+    I_t = I_{t - 1} + i^I_t - i^R_t,
+$$
+and thus:
+$$
+    i^I_t = I_t - I_{t - 1} + i^R_t.
+$$
+We then substitute the values of $i^I_t$ for $E_t$ and the **observed** incidence for $O_t$ in the equation above to generate the metric. Similarly for the removal curve.
+
+Run 10 generations of ABC-SMC, with tolerances uniformly distributed in the range 600--230 for the two chi-squared metrics, and 40--5 for the final epidemic size and time of the final removal. Summarise your approximate posteriors, and the posteriors for $R_0$, the mean latent period and the mean infectious period.
+```
+
+```{solution}
+
+``{r, ebola-}
+## generate model including tspan and stop criteria
+model <- mparseRcpp(
+    transitions = transitions,
+    compartments = compartments,
+    pars = pars,
+    addVars = c("finalsize", "tol_R"),
+    stopCrit = "R > (finalsize + tol_R)",
+    tspan = T
+)
+## compile model
+model <- compileRcpp(model)
+model
+``
+
+Notice the order of the arguments in `model()`: pars`, `tstart`, `tstop`, `u`, `tspan`, `finalsize`, `tol_R`. Hence we need to amend our `simEbola()` function accordingly by adding a `tspan` argument, as well as vectors of observed counts:
+
+``{r, ebola-solfunc}
+## function to match simulations
+simEbola <- function(pars, data, tols, u, model, tspan, OI, OR) {
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u, tspan, data[1], tols[1])
+    
+    ## 'sims' is now a list, with the first element a vector
+    ## of the form: completed (1/0), t, S, E, I, R (here),
+    ## and the second element is a matrix containing the 
+    ## time-series counts
+    simSum <- sims[[1]]
+    counts <- sims[[2]]
+    if(simSum[1] == 0) {
+        ## if rejected during the simulation
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- simSum[2]
+        finalsize <- simSum[6]
+        
+        ## create incidence counts from simulated counts
+        ER <- c(NA, diff(counts[, 5]))
+        EI <- c(NA, diff(counts[, 4])) + ER
+        
+        ## extract just day 55 onwards
+        ER <- ER[55:length(ER)]
+        EI <- EI[55:length(EI)]
+        OR <- OR[56:length(OR)]
+        OI <- OI[56:length(OI)]
+        Rdenom <- OR
+        Rdenom[Rdenom == 0] <- 1
+        Idenom <- OI
+        Idenom[Idenom == 0] <- 1
+        
+        ## calculate chi-squared metrics
+        X2I <- sum((EI - OI)^2 / Rdenom)
+        X2R <- sum((ER - OR)^2 / Idenom)
+    }
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime, X2I, X2R) - data) <= tols)){
+        return(c(finalsize, finaltime, X2I, X2R))
+    } else {
+        return(NA)
+    }
+}
+
+## now set tolerances
+tols <- matrix(rep(round(seq(40, 5, length.out = 10)), each = 2), ncol = 2, byrow = T)
+tols <- cbind(tols, matrix(rep(round(seq(600, 230, length.out = 10)), each = 2), ncol = 2, byrow = T))
+colnames(tols) <- c("finalsize", "finaltime", "X2I", "X2R")
+
+## define the targeted summary statistics
+data <- c(finalsize = 316, finaltime = 191, X2I = 0, X2R = 0)
+``
+
+Now we run the ABC-SMC routine:
+
+``{r, ebola-solabcsmc}
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simEbola, iniStates, 50, tols, 
+               parallel = T, 
+               model = model, tspan = 1:191, OI = ebola$clin_signs, OR = ebola$removal)
+``
+
+```
+
