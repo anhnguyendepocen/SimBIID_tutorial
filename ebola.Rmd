@@ -29,7 +29,7 @@ where `COND` is a condition, which if met outputs `OUT1`, else it outputs `OUT2`
 ```{r, ebola-setmod}
 ## set up model
 transitions <- c(
-    "S -> beta * exp((t > 126.0 ? (-q):0.0)) * S * I / (S + E + I + R) -> E", 
+    "S -> beta * exp((t > 123.0 ? (-q):0.0)) * S * I / (S + E + I + R) -> E", 
     "E -> delta * E -> I", 
     "I -> gamma * I -> R"
 )
@@ -337,14 +337,15 @@ simEbola <- function(pars, data, tols, u, model, tspan, OI, OR) {
         EI <- EI[55:length(EI)]
         OR <- OR[56:length(OR)]
         OI <- OI[56:length(OI)]
-        Rdenom <- OR
-        Rdenom[Rdenom == 0] <- 1
-        Idenom <- OI
-        Idenom[Idenom == 0] <- 1
+        
+        ER <- ER[OR > 0]
+        OR <- OR[OR > 0]
+        EI <- EI[OI > 0]
+        OI <- OI[OI > 0]
         
         ## calculate chi-squared metrics
-        X2I <- sum((EI - OI)^2 / Rdenom)
-        X2R <- sum((ER - OR)^2 / Idenom)
+        X2I <- sum((EI - OI)^2 / OI)
+        X2R <- sum((ER - OR)^2 / OR)
     }
     
     ## return vector if match, else return NA
@@ -371,6 +372,11 @@ Now we run the ABC-SMC routine:
 post <- ABCSMC(data, priors, simEbola, iniStates, 50, tols, 
                parallel = T, 
                model = model, tspan = 1:191, OI = ebola$clin_signs, OR = ebola$removal)
+``
+
+``{r, ebola-solR0}
+## summarise approximate posterior
+summary(post, transfunc = R0fn)
 ``
 
 ```
