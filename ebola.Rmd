@@ -18,18 +18,22 @@ $$
     \end{align}\right.
 $$
 
-where $t_{int}$ is the time at which intervention strategies were introduced. The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only changes after each event (in practice we would do this in a much better manner at the cost of additional computational loads).
+where $t_{int}$ is the time at which intervention strategies were introduced (around day 123 in this example). The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only changes after each event (in practice we would do this in a much better manner at the cost of additional computational loads).
 
 To model this using our `mparseRcpp()` function, we need to add a little bit of additional C code to our model. In essence we need an **if-else** statement: **if** $t > t_{int}$, then multiply $\beta$ by $e^{-q(t - t_{int})}$, otherwise multiply it by 1. The C syntax for an if-else statement is of the form:
 
 `(COND ? OUT1:OUT2)`
 
-where `COND` is a condition, which if met outputs `OUT1`, else it outputs `OUT2`. Hence, to set up the model we can run:
+where `COND` is a condition, which if met outputs `OUT1`, else it outputs `OUT2`. Hence, we can use:
+
+`(t > 123.0 ? (-q * (t - 123.0)):0.0)`
+
+which returns a value of $-q(t - 123)$ if $t > 123.0$, or a value of $0$ if $t \leq 123$ (bearing in mind that $e^0 = 1$). Therefore, to set up the model we can run:
 
 ```{r, ebola-setmod}
 ## set up model
 transitions <- c(
-    "S -> beta * exp((t > 123.0 ? (-q):0.0)) * S * I / (S + E + I + R) -> E", 
+    "S -> beta * exp((t > 123.0 ? (-q * (t - 123.0)):0.0)) * S * I / (S + E + I + R) -> E", 
     "E -> delta * E -> I", 
     "I -> gamma * I -> R"
 )
@@ -57,7 +61,7 @@ It's an approximation because we only update the rate every time there's an even
 A better approach might be to update the infection rate at some regular interval, such as at daily time steps.
 ```
 
-Now we can set priors and initial states:
+Now we can set priors and initial states (from McKinley et al., 2009):
 
 ```{r, ebola-setpriors}
 ## set priors
