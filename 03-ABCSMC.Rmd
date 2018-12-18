@@ -1,6 +1,11 @@
 # Approximate Bayesian Computation
 
-Here we will run the ABC-SMC routine of Toni et al. (2009).
+Here we will run the ABC-SMC routine of [@tonietal:2009]. Firstly, load the `SimBIID` library:
+
+```{r, sim-simbiid, warning = F, message = F}
+## load library
+library(SimBIID)
+```
 
 ```{r, abc-sums, include = F}
 ## extract summaries
@@ -22,6 +27,9 @@ Although simple, these two measures serve to give us some information on both th
 In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous section, and specify a model using the `mparseRcpp()` function. The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see that the first argument to the function must be either an `ABCSMC` object (we will come to this later), or a named `vector` with entries containing the observed summary statistics to match to. Let's create this data object:
 
 ```{r, abc-sums1}
+## load data
+BS <- read.csv("BS.csv", header = T)
+
 ## create vector of summary statistics
 sumStat <- c(finalsize = 512, finaltime = max(BS$day))
 sumStat
@@ -32,7 +40,8 @@ The second argument must be a `data.frame` containing information about the prio
 ```{r, abc-priors}
 ## set priors
 priors <- data.frame(parnames = c("beta", "muI", "muB"), 
-                     dist = rep("unif", 3), stringsAsFactors = F)
+                     dist = rep("unif", 3), 
+                     stringsAsFactors = F)
 priors$p1 <- c(0, 0, 0)
 priors$p2 <- c(5, 5, 1)
 priors
@@ -98,7 +107,7 @@ model
 
 You can see that the compiled model is an R `function` that takes four arguments, `pars`, `tstart`, `tstop` and `u`. Convenient eh?
 
-> **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()` (you could use `SimInf` here for example).
+> **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()` (you could use the `SimInf` package here for example).
 
 The `simBS` function we have made therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. Next we need to specify the initial states of the system (as a named `vector`---which we already have as an object called `iniStates`).
 
@@ -291,7 +300,7 @@ post <- ABCSMC(
     tols = tols,
     ptols = 0.5,
     ngen = 3, 
-    parallel = T, 
+    parallel = T,
     model = model, tspan = BS$day, B = BS$B
 )
 ```

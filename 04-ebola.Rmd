@@ -1,6 +1,13 @@
 # More challenging example: Ebola in the Democratic Republic of Congo
 
-The rates of transition between states in this model is given by:
+Here we will explore a more challenging example, that of an outbreak of Ebola in the Democratic Republic of Congo in 1995. Details can be found in [@mckinleyetal:2009]. Firstly, load the `SimBIID` library:
+
+```{r, sim-simbiid, warning = F, message = F}
+## load library
+library(SimBIID)
+```
+
+This in an $SEIR$ model, where the rates of transition between the states is given by:
 
 \begin{align*}
     P\left[\mbox{infection event in}~[t, t + \delta t)\right] = \beta S I / N + o(\delta t)\\
@@ -18,7 +25,7 @@ $$
     \end{align}\right.
 $$
 
-where $t_{int}$ is the time at which intervention strategies were introduced (around day 123 in this example). The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only changes after each event (in practice we would do this in a much better manner at the cost of additional computational loads).
+where $t_{int}$ is the time at which intervention strategies were introduced (where $t_{int} = 123$ in this example). The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only changes after each event (in practice we would do this in a much better manner at the cost of an increased computational burden).
 
 To model this using our `mparseRcpp()` function, we need to add a little bit of additional C code to our model. In essence we need an **if-else** statement: **if** $t > t_{int}$, then multiply $\beta$ by $e^{-q(t - t_{int})}$, otherwise multiply it by 1. The C syntax for an if-else statement is of the form:
 

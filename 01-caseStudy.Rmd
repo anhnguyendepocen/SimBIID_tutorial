@@ -1,6 +1,6 @@
 # Case Study
 
-To illustrate some of these ideas we can use a case study of influenza in a boarding school (1978). These data are from a paper in the BMJ in 1978[^1] and provided at [http://kingaa.github.io/short-course/stochsim/bsflu_data.txt](http://kingaa.github.io/short-course/stochsim/bsflu_data.txt). I have downloaded the file as "BS.csv".
+To illustrate some of these ideas we can use a case study of influenza in a boarding school. These data are from a paper in the BMJ in 1978[^1] and provided at [http://kingaa.github.io/short-course/stochsim/bsflu_data.txt](http://kingaa.github.io/short-course/stochsim/bsflu_data.txt). I have downloaded the file as "BS.csv".
 
 [^1]: Influenza in a Boarding School. British Medical Journal, **1:587**, 1978.
 

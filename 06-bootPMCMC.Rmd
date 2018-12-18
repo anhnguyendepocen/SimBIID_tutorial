@@ -1,6 +1,16 @@
 # Particle MCMC
 
-Here we will run the PMCMC routine using a bootstrap particle filter. Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C. The `SimBIID` package provides a function `PMCMC()` that runs this algorithm, and if you pass a `SimBIID_model` object to this function, it will automatically compile in the correct manner.
+Here we will return to our influenza in a boarding school example. Firstly, load the data and the `SimBIID` package:
+
+```{r, warning = F, message = F}
+## load data
+BS <- read.csv("BS.csv", header = T)
+
+## load library
+library(SimBIID)
+```
+
+Here we will run a PMCMC routine [@andrieuetal:2010] using a bootstrap particle filter to estimate the likelihood [@gordonetal:1993]. Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C. The `SimBIID` package provides a function `PMCMC()` that runs this algorithm, and if you pass a `SimBIID_model` object to this function, it will automatically compile in the correct manner.
 
 The other thing is that we will be matching at a set of given time points, so we cannot add a `tspan` argument. Rather, this will be determined by the `data` that we pass to `PMCMC()`. In addition, we need to specify an observation process. This is passed as an argument called `obsProcess` to the `mparseRcpp()` function. This argument must be a `data.frame`, with columns in the order: `dataNames`, `dist`, `p1`, `p2`. 
 
@@ -53,12 +63,15 @@ model <- mparseRcpp(
 )
 ```
 
+> **Note:** we do **not** have to compile the model here. The `PMCMC()` function will do this for us. This is because we need to compile as an object to run from C rather than R, so the `PMCMC()` function deals with this.
+
 Now we run the PMCMC algorithm for 5,000 iterations, using 50 particles. We pass the same initial states and priors as in the ABC-SMC practical, but with an additional prior for $\rho \sim U(0, 1)$ (since $\rho \in (0, 1)$).
 
 ```{r}
 ## set priors
 priors <- data.frame(parnames = c("beta", "muI", "muB", "rho"), 
-                     dist = rep("unif", 4), stringsAsFactors = F)
+                     dist = rep("unif", 4), 
+                     stringsAsFactors = F)
 priors$p1 <- c(0, 0, 0, 0)
 priors$p2 <- c(5, 5, 1, 1)
 priors
@@ -70,20 +83,20 @@ iniStates <- c(S = 762, I = 1, B = 0, C = 0)
 iniPars <- c(beta = 3.5, muI = 2.2, muB = 0.71, rho = 0.99)
 
 ## run PMCMC algorithm
-BS_mcmc <- PMCMC(BS_dat, priors, model, iniStates, iniPars = iniPars,
+post <- PMCMC(BS_dat, priors, model, iniStates, iniPars = iniPars,
                  npart = 50, niter = 5000, nprintsum = 1000)
 ```
 
 ```{r}
 ## plot MCMC traces
-plot(BS_mcmc, "trace")
+plot(post, "trace")
 ```
 
 We can see that the chain looks like it's converging towards a stationary distribution, but let's run it for a bit longer. We can do this simply by passing our current `PMCMC` object back into the `PMCMC()` function:
 
 ```{r}
-BS_mcmc <- PMCMC(BS_mcmc, niter = 5000, nprintsum = 1000)
-plot(BS_mcmc, "trace")
+post <- PMCMC(post, niter = 5000, nprintsum = 1000)
+plot(post, "trace")
 ```
 
 ## Optimising the number of particles
@@ -95,7 +108,7 @@ Firstly we run the chain for a fixed number of particles until it looks like the
 Hence, from the training runs above we can extract the posterior medians:
 
 ```{r}
-postMed <- window(BS_mcmc, start = 2000)
+postMed <- window(post, start = 2000)
 postMed <- as.matrix(postMed$pars)
 postMed <- apply(postMed, 2, median)
 postMed <- postMed[-length(postMed)]
@@ -144,7 +157,7 @@ Here we will choose the number of particles to be 100.
 We now start a new chain using 100 particles, and with starting values derived from the training runs.
 
 ```{r}
-BS_mcmc <- PMCMC(BS_dat, priors, model, iniStates, iniPars = postMed,
+post <- PMCMC(BS_dat, priors, model, iniStates, iniPars = postMed,
                  npart = 100, niter = 10000, nprintsum = 1000)
 ```
 
@@ -152,15 +165,38 @@ We can visualise the MCMC chain and the approximate posterior distributions (aft
 
 ```{r}
 ## plot and summarise MCMC output
-plot(BS_mcmc, "trace")
+plot(post, "trace")
 
 ## remove burn-in
-BS_mcmc <- window(BS_mcmc, start = 2000)
+post <- window(post, start = 2000)
 
 ## plot and summarise outputs
-plot(BS_mcmc)
-summary(BS_mcmc)
+plot(post)
+summary(post)
 ```
+
+```{task}
+Produce summaries of the posteriors for $R_0$ and the average length of the infectious period. **Hint**: use a `transfunc` argument as before.
+```
+
+```{solution}
+
+``{r, boot-soltrans}
+## function to calculate R0 and length of
+## infectious periods
+R0fn <- function(beta, muI) {
+    data.frame(
+        R0 = beta / muI, 
+        infperiod = 1 / muI
+    )
+}
+
+## summarise approximate posterior
+summary(post, transfunc = R0fn)
+``
+
+```
+
 
 
 

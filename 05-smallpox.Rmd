@@ -1,14 +1,21 @@
 # Example: Abakaliki smallpox outbreak
 
-Firstly, load in the data:
+Here we will explore fitting a simple $SIR$ model to the famous Abakaliki smallpox data (see e.g.  [@oneill_roberts:1999]). Firstly, load the `SimBIID` library:
+
+```{r, sim-simbiid, warning = F, message = F}
+## load library
+library(SimBIID)
+```
+
+Then load in the data:
 
 ```{r, smallpox-data}
 ## read in the data and convert to vector
-smallpox <- as.numeric(unlist(read.table("smallpox.txt", header = F)))
+smallpox <- as.numeric(unlist(read.csv("smallpox.csv", header = F)))
 summary(smallpox)
 ```
 
-These data are the inter-removal times for `r length(smallpox)` individuals, where the times have been relabelled such that time 0 is the time of the first removal. See e.g. [@oneill_roberts:1999] for more details.
+These data are the inter-removal times for `r length(smallpox)` individuals, where the times have been relabelled such that time 0 is the time of the first removal---see e.g. [@oneill_roberts:1999] for more details.
 
 ## SIR model
 
