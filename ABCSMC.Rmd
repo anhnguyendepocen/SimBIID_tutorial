@@ -368,7 +368,7 @@ post <- ABCSMC(
     npart = 50,
     tols = tols,
     ptols = 0.5,
-    ngen = 4,
+    ngen = 3,
     parallel = T, 
     model = model, tspan = BS$day, B = BS$B, C = BS$C
 )
