@@ -53,7 +53,7 @@ model <- mparseRcpp(
 )
 ```
 
-Now we run the PMCMC algorithm for 2,000 iterations, using 25 particles. We pass the same initial states and priors as in the ABC-SMC practical, but with an additional prior for $\rho \sim U(0, 1)$ (since $\rho \in (0, 1)$).
+Now we run the PMCMC algorithm for 5,000 iterations, using 50 particles. We pass the same initial states and priors as in the ABC-SMC practical, but with an additional prior for $\rho \sim U(0, 1)$ (since $\rho \in (0, 1)$).
 
 ```{r}
 ## set priors
@@ -66,9 +66,12 @@ priors
 ## define initial states
 iniStates <- c(S = 762, I = 1, B = 0, C = 0)
 
+## set initial parameter values (informed by ABC-SMC runs)
+iniPars <- c(beta = 3.5, muI = 2.2, muB = 0.71, rho = 0.99)
+
 ## run PMCMC algorithm
-BS_mcmc <- PMCMC(BS_dat, priors, model, iniStates,
-                 npart = 25, niter = 5000)
+BS_mcmc <- PMCMC(BS_dat, priors, model, iniStates, iniPars = iniPars,
+                 npart = 50, niter = 5000, nprintsum = 1000)
 ```
 
 ```{r}
@@ -79,15 +82,15 @@ plot(BS_mcmc, "trace")
 We can see that the chain looks like it's converging towards a stationary distribution, but let's run it for a bit longer. We can do this simply by passing our current `PMCMC` object back into the `PMCMC()` function:
 
 ```{r}
-BS_mcmc <- PMCMC(BS_mcmc, niter = 5000)
+BS_mcmc <- PMCMC(BS_mcmc, niter = 5000, nprintsum = 1000)
 plot(BS_mcmc, "trace")
 ```
 
 ## Optimising the number of particles
 
-The mixing of the chain and the speed of convergence is dependent in some sense by the number of particles. There is no strong consensus about how to do this, but a rule-of-thumb is to try to choose the number of particles such that the variance of the log-likelihood estimate at a given set of parameters $\theta^\prime$ is between 1--3. Clearly the larger the number of particles, the higher the computational burden, so in practice the additional computational burden of the simulations must be balanced against the improved mixing and faster convergence. This is tricky, so instead here we take a simpler approach.
+The mixing of the chain and the speed of convergence is related to the number of particles (amongst other things). There is no strong consensus, but a rule-of-thumb is to try to choose the number of particles such that the variance of the log-likelihood estimate at a suitable set of parameters $\theta^\prime$ is between 1--3. Clearly the larger the number of particles, the higher the computational burden, so in practice the additional computational burden of the simulations must be balanced against the improved mixing and faster convergence. This is tricky, so instead here we take a simpler approach.
 
-Firstly we run the chain for a fixed number of particles until it looks like the chain has converged. Then we choose a set of parameter values $\theta^\prime$ chosen to be the posterior medians. We then generate 500 estimates of the log-likelihood for a range of different numbers of particles, from which we can calculate the variance of these estimate. We then choose the smallest number of particles with a variance of the log-likelihood of less than 3.
+Firstly we run the chain for a fixed number of particles until it looks like the chain has converged. Then we choose a set of parameter values $\theta^\prime$ chosen to be the posterior medians. We then generate 500 estimates of the log-likelihood for a range of different numbers of particles, from which we can calculate the variance of these estimates. We then choose the smallest number of particles with a variance of the log-likelihood of less than 3.
 
 Hence, from the training runs above we can extract the posterior medians:
 
@@ -126,28 +129,35 @@ for(i in 1:length(npart)){
                  npart = npart[i], niter = 500, fixpars = T)
     BS_train[[i]] <- var(BS_train[[i]]$output)
 }
+names(BS_train) <- paste0("npart = ", npart)
+BS_train <- do.call("c", BS_train)
 ```
 
 ```{r}
 BS_train
 ```
 
-Here we will choose the number of particles to be 75.
+Here we will choose the number of particles to be 100.
 
 ## Visualising and summarising the posterior distributions
 
-We now start a new chain using 75 particles, and with starting values derived from the training runs.
+We now start a new chain using 100 particles, and with starting values derived from the training runs.
 
 ```{r}
 BS_mcmc <- PMCMC(BS_dat, priors, model, iniStates, iniPars = postMed,
-                 npart = 75, niter = 10000)
+                 npart = 100, niter = 10000, nprintsum = 1000)
 ```
 
-We can visualise the MCMC chain and the approximate posterior distributions:
+We can visualise the MCMC chain and the approximate posterior distributions (after removing some burn-in):
 
 ```{r}
 ## plot and summarise MCMC output
 plot(BS_mcmc, "trace")
+
+## remove burn-in
+BS_mcmc <- window(BS_mcmc, start = 2000)
+
+## plot and summarise outputs
 plot(BS_mcmc)
 summary(BS_mcmc)
 ```
