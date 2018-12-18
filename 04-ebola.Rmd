@@ -2,7 +2,7 @@
 
 Here we will explore a more challenging example, that of an outbreak of Ebola in the Democratic Republic of Congo in 1995. Details can be found in [@mckinleyetal:2009]. Firstly, load the `SimBIID` library:
 
-```{r, sim-simbiid, warning = F, message = F}
+```{r, ebola-simbiid, warning = F, message = F}
 ## load library
 library(SimBIID)
 ```
@@ -263,7 +263,7 @@ The full data can be found in the "ebola.csv" file. The first column corresponds
 
 We use the `clin_signs` column as a proxy for the $I$ **incidence** (not counts directly, rather **new** incidents at each day), and the `removals` column as a proxy for the $R$ **incidence**. Read the data into R as follows:
     
-```{r, ebola-data}
+```{r, ebola-data1}
 ebola <- read.csv("ebola.csv", header = T)
 head(ebola)
 ```
@@ -271,11 +271,11 @@ head(ebola)
 Notice that if we sum the events down each column we get different numbers of events. We know that the total epidemic size was 315, and hence we have `r 315 - sum(ebola$clin_signs)` missing $I$ events and `r 315 - sum(ebola$removals)` missing $R$ events.
 
 ```{task}
-Amend the code above to add in a chi-squared distance metric (see below) between the simulated $I$ curve and the observed data curve (`clin_signs`), and also the simulated $R$ curve and the observed data curve (`removals`). **Note**: the simulations produce the **number of individuals** in each class at time $t$, whereas the data are the number of **new individuals** in each class at time $t$.
+Amend the code above to add in a sum-of-squares distance metric (see below) between the simulated $I$ curve and the observed data curve (`clin_signs`), and also the simulated $R$ curve and the observed data curve (`removals`). **Note**: the simulations produce the **number of individuals** in each class at time $t$, whereas the data are the number of **new individuals** in each class at time $t$.
 
 Another complexity is that monitoring of the epidemic did not start until day 55, and so we do not start generating the summary statistics until after that time point. Hence the chi-squared metric is defined as follows:
 $$
-    X^2 = \sum_{t = 55}^T \frac{(E_t - O_t)^2}{\max\left(O_t, 1\right)},
+    X^2 = \sum_{t = 55}^T (E_t - O_t)^2,
 $$
 where $O_t$ is the **observed** count at time $t$, and $E_t$ is the **simulated** count at time $t$ (notice that we don't start cumulating until day 55).
 
@@ -297,7 +297,7 @@ $$
 $$
 We then substitute the values of $i^I_t$ for $E_t$ and the **observed** incidence for $O_t$ in the equation above to generate the metric. Similarly for the removal curve.
 
-Run 10 generations of ABC-SMC, with tolerances uniformly distributed in the range 600--230 for the two chi-squared metrics, and 40--5 for the final epidemic size and time of the final removal. Summarise your approximate posteriors, and the posteriors for $R_0$, the mean latent period and the mean infectious period.
+Run 5 generations of ABC-SMC, with starting tolerances of 220,000 for the two sum-of-squares metrics, and 40 for the final epidemic size and time of the final removal metrics. Summarise your approximate posteriors, and the posteriors for $R_0$, the mean latent period and the mean infectious period.
 ```
 
 ```{solution}
@@ -349,14 +349,9 @@ simEbola <- function(pars, data, tols, u, model, tspan, OI, OR) {
         OR <- OR[56:length(OR)]
         OI <- OI[56:length(OI)]
         
-        ER <- ER[OR > 0]
-        OR <- OR[OR > 0]
-        EI <- EI[OI > 0]
-        OI <- OI[OI > 0]
-        
-        ## calculate chi-squared metrics
-        X2I <- sum((EI - OI)^2 / OI)
-        X2R <- sum((ER - OR)^2 / OR)
+        ## calculate sum-of-squares metrics
+        X2I <- sum((EI - OI)^2)
+        X2R <- sum((ER - OR)^2)
     }
     
     ## return vector if match, else return NA
@@ -368,9 +363,8 @@ simEbola <- function(pars, data, tols, u, model, tspan, OI, OR) {
 }
 
 ## now set tolerances
-tols <- matrix(rep(round(seq(40, 5, length.out = 10)), each = 2), ncol = 2, byrow = T)
-tols <- cbind(tols, matrix(rep(round(seq(600, 230, length.out = 10)), each = 2), ncol = 2, byrow = T))
-colnames(tols) <- c("finalsize", "finaltime", "X2I", "X2R")
+tols <- c(40, 40, 220000, 220000)
+names(tols) <- c("finalsize", "finaltime", "X2I", "X2R")
 
 ## define the targeted summary statistics
 data <- c(finalsize = 316, finaltime = 191, X2I = 0, X2R = 0)

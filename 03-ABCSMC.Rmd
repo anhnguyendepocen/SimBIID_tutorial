@@ -2,7 +2,7 @@
 
 Here we will run the ABC-SMC routine of [@tonietal:2009]. Firstly, load the `SimBIID` library:
 
-```{r, sim-simbiid, warning = F, message = F}
+```{r, abc-simbiid, warning = F, message = F}
 ## load library
 library(SimBIID)
 ```

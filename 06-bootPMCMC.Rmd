@@ -2,7 +2,7 @@
 
 Here we will return to our influenza in a boarding school example. Firstly, load the data and the `SimBIID` package:
 
-```{r, warning = F, message = F}
+```{r, boot-simbiid, warning = F, message = F}
 ## load data
 BS <- read.csv("BS.csv", header = T)
 

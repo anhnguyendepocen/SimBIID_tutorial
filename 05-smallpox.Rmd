@@ -2,7 +2,7 @@
 
 Here we will explore fitting a simple $SIR$ model to the famous Abakaliki smallpox data (see e.g.  [@oneill_roberts:1999]). Firstly, load the `SimBIID` library:
 
-```{r, sim-simbiid, warning = F, message = F}
+```{r, smallpox-simbiid, warning = F, message = F}
 ## load library
 library(SimBIID)
 ```
