@@ -8,23 +8,44 @@ library(SimBIID)
 ```
 
 ```{r, abc-sums, include = F}
+## load data
+BS <- read.csv("BS.csv", header = T)
+
 ## extract summaries
 finaltime <- max(BS$day)
 finalsize <- 512
 ```
 
+> **Note: in all the following examples I have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.**
+
+## Simulation model
+
+In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous section, and specify a model using the `mparseRcpp()` function. 
+
+```{r, abcsmc-model}
+## setup simulation model
+transitions <- c(
+    "S -> beta * S * I / (S + I + B + C) -> I", 
+    "I -> muI * I -> B", 
+    "B -> muB * B -> C"
+)
+compartments <- c("S", "I", "B", "C")
+pars <- c("beta", "muI", "muB")
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars
+)
+```
+
 ## Summary statistics
 
-In order to run an ABC routine, it is necessary to define a set of lower order summary statistics to match to. The data here are time-series counts of ***bed-rest *** and ***convalescence*** events. A very simple option would be to match to:
+The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see that the first argument to the function must be either an `ABCSMC` object (we will come to this later), or a named `vector` with entries containing the observed summary statistics to match to. In order to run an ABC routine, it is necessary to define a set of lower order summary statistics to match to. The data here are time-series counts of ***bed-rest *** and ***convalescence*** events. A very simple option would be to match to:
 
 * final epidemic size (i.e. total number of removals across the time course of the epidemic), and
 * time of final removal (in this case when the epidemic process ceased).
 
-Although simple, these two measures serve to give us some information on both the **length** and **magnitude** of the epidemic, and should contain at least some useful information about the parameters. In this case the final removal time is `r finaltime` days and the final epidemic size is `r finalsize` individuals.
-
-## Simulation model
-
-In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous section, and specify a model using the `mparseRcpp()` function. The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see that the first argument to the function must be either an `ABCSMC` object (we will come to this later), or a named `vector` with entries containing the observed summary statistics to match to. Let's create this data object:
+Although simple, these two measures serve to give us some information on both the **length** and **magnitude** of the epidemic, and should contain at least some useful information about the parameters. In this case the final removal time is `r finaltime` days and the final epidemic size is `r finalsize` individuals. Let's create this data object:
 
 ```{r, abc-sums1}
 ## load data
@@ -35,7 +56,7 @@ sumStat <- c(finalsize = 512, finaltime = max(BS$day))
 sumStat
 ```
 
-The second argument must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$, $\mu_I \sim U(0, 5)$ and $\mu_B \sim U(0, 1)$. We can specify this as follows:
+The second argument to the `ABCSMC()` function must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$, $\mu_I \sim U(0, 5)$ and $\mu_B \sim U(0, 1)$. We can specify this as follows:
 
 ```{r, abc-priors}
 ## set priors
@@ -90,15 +111,7 @@ simBS <- function(pars, data, tols, u, model) {
 
 > **Note**: To speed things up here we will not use the `run()` function, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function. The `run()` function does all this internally, but here we will do it in two stages. 
 
-Hence, to specify and compile the model we can run:
-
-```{r, abc-model}
-model <- mparseRcpp(
-    transitions = transitions, 
-    compartments = compartments,
-    pars = pars
-)
-```
+Hence, to compile the model we can run:
 
 ```{r, abc-compmod}
 model <- compileRcpp(model)
@@ -109,9 +122,14 @@ You can see that the compiled model is an R `function` that takes four arguments
 
 > **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()` (you could use the `SimInf` package here for example).
 
-The `simBS` function we have made therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. Next we need to specify the initial states of the system (as a named `vector`---which we already have as an object called `iniStates`).
+The `simBS` function we have made therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. Next we need to specify the initial states of the system (as a named `vector`):
 
-We can then either specify a `matrix` of tolerances to match to (these must be decreasing over each generation of the ABC-SMC algorithm), or alternatively specify the proportion of simulated outcomes at each generation to use to derive adaptive tolerances (e.g. if `ptols = 0.5`, then we choose tolerances at the $t^{\mbox{\scriptsize th}}$ generation such that we would have accepted 50% of the simulations at the $(t - 1)^{\mbox{\scriptsize th}}$ generation. Note that if we wish to use this latter approach, then we will need to give the algorithm some initial tolerances for generation 1.
+```{r, abc-inistates}
+## define initial states
+iniStates <- c(S = 762, I = 1, B = 0, C = 0)
+```
+
+We can then either specify a `matrix` of tolerances to match to (these must be decreasing over each generation of the ABC-SMC algorithm), or alternatively specify the proportion of simulated outcomes at each generation to use to derive adaptive tolerances (e.g. if `ptols = 0.5`, then we choose tolerances at the $t$^th^ generation such that we would have accepted 50% of the simulations at the $(t - 1)$^th^ generation. Note that if we wish to use this latter approach, then we will need to give the algorithm some initial tolerances for generation 1.
 
 > **Note**: the names and order of the tolerances must match the `x` argument.
 
@@ -178,7 +196,7 @@ plot(post, "output", gen = c(1, 7))
 
 We can also produce joint density plots (if the `GGally` package is installed):
 
-```{r, abc-plot4, fig.width = 6, fig.height = 6}
+```{r, abc-plot4, fig.width = 6, fig.height = 6, message = F, warning = F}
 ## joint distributions
 plot(post, gen = c(1, 7), joint = T)
 ```
@@ -381,6 +399,10 @@ post <- ABCSMC(
     parallel = T, 
     model = model, tspan = BS$day, B = BS$B, C = BS$C
 )
+post
+summary(post)
 ``
 
 ```
+
+> **Remember: here we have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.**

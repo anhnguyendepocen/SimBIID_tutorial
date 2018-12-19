@@ -15,6 +15,7 @@ output:
         keep_md: TRUE
 linkcolor: blue
 documentclass: book
+bibliography: ref.bib
 link-citations: yes
 description: "Inference in infectious disease systems practicals"
 ---

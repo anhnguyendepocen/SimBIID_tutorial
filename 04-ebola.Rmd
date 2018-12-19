@@ -10,19 +10,19 @@ library(SimBIID)
 This in an $SEIR$ model, where the rates of transition between the states is given by:
 
 \begin{align*}
-    P\left[\mbox{infection event in}~[t, t + \delta t)\right] = \beta S I / N + o(\delta t)\\
-    P\left[\mbox{infectivity event in}~[t, t + \delta t)\right] = \delta E + o(\delta t)\\
-    P\left[\mbox{removal event in}~[t, t + \delta t)\right] = \gamma I + o(\delta t)
+    P\left[\mbox{infection event in}~[t, t + \delta t)\right] &= \beta S I / N + o(\delta t)\\
+    P\left[\mbox{infectivity event in}~[t, t + \delta t)\right] &= \delta E + o(\delta t)\\
+    P\left[\mbox{removal event in}~[t, t + \delta t)\right] &= \gamma I + o(\delta t)
 \end{align*}
 
 where $\beta$ is *time-dependent*, such that:
 
 $$
     \beta = \left\{
-    \begin{align}
-        &\beta & \mathrm{if}~t < t_{int},\\
-        &\beta e^{-q(t - t_{int})} & \mathrm{if}~t \geq t_{int},
-    \end{align}\right.
+    \begin{array}{ll}
+        \beta & \mathrm{if}~t < t_{int},\\
+        \beta e^{-q(t - t_{int})} & \mathrm{if}~t \geq t_{int},
+    \end{array}\right.
 $$
 
 where $t_{int}$ is the time at which intervention strategies were introduced (where $t_{int} = 123$ in this example). The challenge here is that in a stochastic system we require that the event rates are piecewise constant, and thus the continuous exponential decay is hard to capture. Instead we can approximate this by assuming that the rate only changes after each event (in practice we would do this in a much better manner at the cost of an increased computational burden).
@@ -273,13 +273,13 @@ Notice that if we sum the events down each column we get different numbers of ev
 ```{task}
 Amend the code above to add in a sum-of-squares distance metric (see below) between the simulated $I$ curve and the observed data curve (`clin_signs`), and also the simulated $R$ curve and the observed data curve (`removals`). **Note**: the simulations produce the **number of individuals** in each class at time $t$, whereas the data are the number of **new individuals** in each class at time $t$.
 
-Another complexity is that monitoring of the epidemic did not start until day 55, and so we do not start generating the summary statistics until after that time point. Hence the chi-squared metric is defined as follows:
+Another complexity is that monitoring of the epidemic did not start until day 55, and so we do not start generating the summary statistics until after that time point. Hence the sum-of-squares metric is defined as follows:
 $$
     X^2 = \sum_{t = 55}^T (E_t - O_t)^2,
 $$
 where $O_t$ is the **observed** count at time $t$, and $E_t$ is the **simulated** count at time $t$ (notice that we don't start cumulating until day 55).
 
-To calculate **removal incidence** we note that the number of removals at day $t$ is simply the number of removals at day $t - 1$ plus the number of new removals that occur in $(t - 1, t]$ (the **removal incidence**, denoted $i^R_t$) e.g.
+To calculate **removal incidence** (denoted $i^R_t$) we note that the number of removals at day $t$ is simply the number of removals at day $t - 1$ plus the number of new removals that occur in $(t - 1, t]$  e.g.
 $$
     R_t = R_{t - 1} + i^R_t,
 $$ 
@@ -287,7 +287,7 @@ which implies that
 $$
     i^R_t = R_t - R_{t - 1}.
 $$
-We can do a similar thing with the **infection incidence**, by noting that:
+We can do a similar thing with the **infection incidence** (denoted $i^I_t$), by noting that:
 $$
     I_t = I_{t - 1} + i^I_t - i^R_t,
 $$
@@ -297,7 +297,7 @@ $$
 $$
 We then substitute the values of $i^I_t$ for $E_t$ and the **observed** incidence for $O_t$ in the equation above to generate the metric. Similarly for the removal curve.
 
-Run 5 generations of ABC-SMC, with starting tolerances of 220,000 for the two sum-of-squares metrics, and 40 for the final epidemic size and time of the final removal metrics. Summarise your approximate posteriors, and the posteriors for $R_0$, the mean latent period and the mean infectious period.
+Run 3 generations of ABC-SMC, with starting tolerances of 220,000 for the two sum-of-squares metrics, and 40 for the final epidemic size and time of the final removal metrics. Summarise your approximate posteriors, and the posteriors for $R_0$, the mean latent period and the mean infectious period.
 ```
 
 ```{solution}
@@ -317,7 +317,7 @@ model <- compileRcpp(model)
 model
 ``
 
-Notice the order of the arguments in `model()`: pars`, `tstart`, `tstop`, `u`, `tspan`, `finalsize`, `tol_R`. Hence we need to amend our `simEbola()` function accordingly by adding a `tspan` argument, as well as vectors of observed counts:
+Notice the order of the arguments in `model()`: `pars`, `tstart`, `tstop`, `u`, `tspan`, `finalsize`, `tol_R`. Hence we need to amend our `simEbola()` function accordingly by adding a `tspan` argument, as well as vectors of observed counts:
 
 ``{r, ebola-solfunc}
 ## function to match simulations
@@ -375,7 +375,7 @@ Now we run the ABC-SMC routine:
 ``{r, ebola-solabcsmc}
 ## run ABC-SMC algorithm
 post <- ABCSMC(data, priors, simEbola, iniStates, 50, tols, 
-               parallel = T, 
+               parallel = T, ngen = 3, ptol = 0.5,
                model = model, tspan = 1:191, OI = ebola$clin_signs, OR = ebola$removal)
 ``
 
@@ -385,4 +385,6 @@ summary(post, transfunc = R0fn)
 ``
 
 ```
+
+> **Remember: here we have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.**
 
