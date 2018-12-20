@@ -25,11 +25,11 @@ $$
 $$
 where $B^o_t$ is the **observed** $B$ count at time $t$, $B^s_t$ is the simulated count, and $\rho$ is some value in $(0, 1]$ corresponding to the **reporting rate**. 
 
-The `data` we will pass to the `PMCMC()` function will be a `data.frame` with the first column corresponding to `time` and the second corresponding to the *observed* $B$ curve. hence,
+The `data` we will pass to the `PMCMC()` function will be a `data.frame` with the first column corresponding to `t` and the second corresponding to the *observed* $B$ curve. hence,
 
 ```{r, boot-data}
 ## set up data to pass to PMCMC
-BS_dat <- data.frame(time = BS$day, Bo = BS$B)
+BS_dat <- data.frame(t = BS$day, Bo = BS$B)
 head(BS_dat)
 ```
 To set up the observation process, we define a `data.frame` as follows:
