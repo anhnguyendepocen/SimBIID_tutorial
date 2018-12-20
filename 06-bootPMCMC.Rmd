@@ -197,6 +197,85 @@ summary(post, transfunc = R0fn)
 
 ```
 
+## Predictive posterior distributions
+
+We can also use the model to predict the future course of an outbreak (with uncertainties). The `SimBIID` packages provides a `predict()` method for `PMCMC` objects. To produce predictions we first fit a model to the current available data. This produces a set of posterior samples for each of the parameters. Then, for each set of posterior samples we can produce an estimate of the states of the system at the final observed time point. We do this by running a bootstrap particle filter over the observed time points for each parameter set, and then sampling a trajectory from the weighted set of particles. Hence we also obtain a set of posterior samples for the states of the system at the final observed time point. 
+
+Once thes have been obtained, we can use the corresponding posterior samples to seed a set of forward simulations into the future up to some pre-determined time point. All of this is done within the `predict()` function; we just need to pass it a suitable `PMCMC` object and a `tspan` argument for the time points we wish to predict to.
+
+As an example, let's pretend that we are at day 3 of the outbreak, and let's fit a model to the observed data up to that time point:
+
+```{r, results = "hide"}
+## run PMCMC algorithm
+post <- PMCMC(BS_dat[1:3, ], priors, model, iniStates, iniPars = iniPars,
+                 npart = 50, niter = 10000, nprintsum = 1000)
+## plot traces
+plot(post, "trace")
+```
+
+Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples, which can be obtained by using the `window()` function to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by taking every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before.
+
+```{r}
+## run predictions forward in time
+post_pred <- predict(window(post, start = 2000, thin = 8), tspan = 4:14)
+
+## plot predictions
+plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9))
+```
+The uncertainties up to the blue dashed line are derived from the bootstrap particle filter, whereas the uncertainties going forward are from direct simulations from the model. Since the $B$ and $C$ curves can be compared directly to the observed data, we can add the observed data in as additional arguments to the `plot()` method here, we just have to add an additional `matchData` argument to tell the function which columns of the data to plot against which output from the model. 
+
+> The `matchData = c("Bo = B")` below tells the `plot()` function to match the column called `B0` in the data set to the `B` class from the simulations.
+
+```{r}
+## plot predictions and add observed B and C curves
+plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9),
+     data = BS_dat, matchData = c("Bo = B"))
+```
+
+> This tells 
+
+```{task}
+Repeat the above procedure, refitting at days 5, 8 and 11. What happens to the uncertainties in the predictions? Why is this so?
+```
+
+```{solution}
+
+``{r, include = F}
+post_pred <- list()
+pred_days <- c(5, 8, 11)
+    
+for(i in 1:length(pred_days)) {
+    ## run PMCMC algorithm
+    post <- PMCMC(BS_dat[1:pred_days[i], ], priors, model, iniStates, iniPars = iniPars,
+                     npart = 50, niter = 10000, nprintsum = 1000)
+    ## plot traces
+    plot(post, "trace")
+    
+    ## run predictions forward in time
+    post_pred[[i]] <- predict(post, tspan = (pred_days[i] + 1):14)
+    
+    ## plot predictions
+    post_pred[[i]] <- plot(post_pred[[i]], quant = c(0.6, 0.7, 0.8, 0.9),
+        data = BS_dat, matchData = c("Bo = B"))
+}
+``
+
+``{r, echo = F}
+post_pred[[1]] + ggplot2::ggtitle("Predictions at day 5")
+``
+
+``{r, echo = F}
+post_pred[[2]] + ggplot2::ggtitle("Predictions at day 8")
+``
+
+``{r, echo = F}
+post_pred[[3]] + ggplot2::ggtitle("Predictions at day 11")
+``
+
+We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, but that the predictions get better the more data we fit to.
+
+```
+
 
 
 
