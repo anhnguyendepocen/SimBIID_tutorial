@@ -205,7 +205,7 @@ Once thes have been obtained, we can use the corresponding posterior samples to 
 
 As an example, let's pretend that we are at day 3 of the outbreak, and let's fit a model to the observed data up to that time point:
 
-```{r, results = "hide"}
+```{r, boot-pred, results = "hide"}
 ## run PMCMC algorithm
 post <- PMCMC(BS_dat[1:3, ], priors, model, iniStates, iniPars = iniPars,
                  npart = 50, niter = 10000, nprintsum = 1000)
@@ -213,26 +213,34 @@ post <- PMCMC(BS_dat[1:3, ], priors, model, iniStates, iniPars = iniPars,
 plot(post, "trace")
 ```
 
-Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples, which can be obtained by using the `window()` function to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by taking every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before.
+Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples, which can be obtained by using the `window()` function to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by taking every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before. The `obsProcess = T` argument says that we also wish to produce predictions that take the **observation** process into account. Here the observation process acts only on the $B$ class, and so this will produce an extra column called `Bo` here, which contains predictions assuming a Poisson observation error around the simulated `B` counts (called `Bo` here which is specified in the `datNames` column of the original `obsProcess` object).
 
-```{r}
+```{r, boot-pred1}
 ## run predictions forward in time
 post_pred <- predict(window(post, start = 2000, thin = 8), tspan = 4:14)
 
 ## plot predictions
 plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9))
 ```
-The uncertainties up to the blue dashed line are derived from the bootstrap particle filter, whereas the uncertainties going forward are from direct simulations from the model. Since the $B$ and $C$ curves can be compared directly to the observed data, we can add the observed data in as additional arguments to the `plot()` method here, we just have to add an additional `matchData` argument to tell the function which columns of the data to plot against which output from the model. 
 
-> The `matchData = c("Bo = B")` below tells the `plot()` function to match the column called `B0` in the data set to the `B` class from the simulations.
 
-```{r}
+The uncertainties up to the blue dashed line are derived from the bootstrap particle filter, whereas the uncertainties going forward are from direct simulations from the model. Since the $B$ and $C$ curves can be compared directly to the observed data, we can add the observed data in as additional arguments to the `plot()` method here, we just have to add an additional `matchData` argument to tell the function which columns of the data to plot against which output from the model. In this case we pass the complete data to the function, just so that we can see how close the predictions (estimated from the model fitted at the dashed blue time point) were to the actual data. If you were doing this in real time you would only have the data up to the dashed blue time point.
+
+> The `matchData = c("Bo = B")` below tells the `plot()` function to match the column called `Bo` in the data set to the `B` class from the simulations.
+
+```{r, boot-pred2}
 ## plot predictions and add observed B and C curves
 plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9),
      data = BS_dat, matchData = c("Bo = B"))
 ```
 
-> This tells 
+It might be worth plotting the observations against the `Bo` output from the simulations also, since the simulated `Bo` curves include the **observation process**.
+
+```{r, boot-pred3}
+## plot predictions and add observed B and C curves
+plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9),
+     data = BS_dat, matchData = c("Bo = B", "Bo = Bo"))
+```
 
 ```{task}
 Repeat the above procedure, refitting at days 5, 8 and 11. What happens to the uncertainties in the predictions? Why is this so?
@@ -240,7 +248,7 @@ Repeat the above procedure, refitting at days 5, 8 and 11. What happens to the u
 
 ```{solution}
 
-``{r, include = F}
+``{r, boot-solpred, include = F}
 post_pred <- list()
 pred_days <- c(5, 8, 11)
     
@@ -252,27 +260,32 @@ for(i in 1:length(pred_days)) {
     plot(post, "trace")
     
     ## run predictions forward in time
-    post_pred[[i]] <- predict(post, tspan = (pred_days[i] + 1):14)
-    
-    ## plot predictions
-    post_pred[[i]] <- plot(post_pred[[i]], quant = c(0.6, 0.7, 0.8, 0.9),
-        data = BS_dat, matchData = c("Bo = B"))
+    post_pred[[i]] <- predict(window(post, start = 2000, thin = 8), tspan = (pred_days[i] + 1):14)
 }
 ``
 
-``{r, echo = F}
-post_pred[[1]] + ggplot2::ggtitle("Predictions at day 5")
+``{r, boot-solplotpred}
+post_plot <- list()
+for(i in 1:length(post_pred)){
+    ## plot predictions
+    post_plot[[i]] <- plot(post_pred[[i]], quant = c(0.6, 0.7, 0.8, 0.9),
+        data = BS_dat, matchData = c("Bo = Bo", "Bo = B"))
+}
 ``
 
-``{r, echo = F}
-post_pred[[2]] + ggplot2::ggtitle("Predictions at day 8")
+``{r, boot-solpred1, echo = F}
+post_plot[[1]] + ggplot2::ggtitle("Predictions at day 5")
 ``
 
-``{r, echo = F}
-post_pred[[3]] + ggplot2::ggtitle("Predictions at day 11")
+``{r, boot-solpred2, echo = F}
+post_plot[[2]] + ggplot2::ggtitle("Predictions at day 8")
 ``
 
-We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, but that the predictions get better the more data we fit to.
+``{r, boot-solpred3, echo = F}
+post_plot[[3]] + ggplot2::ggtitle("Predictions at day 11")
+``
+
+We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, as long as we take account for the observation process. Here the observation process acts mostly as a means of modelling **underreporting**, and hence the **observed** counts tend to be less than the **simulated** counts (shown here by adding the observed data line to both the `B` and `Bo_obs` plots). We can also see that the uncertainties in the forecasts get smaller the more data we fit to and also as the epidemic begins to die out.
 
 ```
 
