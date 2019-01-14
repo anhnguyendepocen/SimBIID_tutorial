@@ -213,7 +213,7 @@ post <- PMCMC(BS_dat[1:3, ], priors, model, iniStates, iniPars = iniPars,
 plot(post, "trace")
 ```
 
-Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples, which can be obtained by using the `window()` function to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by taking every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before. The `obsProcess = T` argument says that we also wish to produce predictions that take the **observation** process into account. Here the observation process acts only on the $B$ class, and so this will produce an extra column called `Bo` here, which contains predictions assuming a Poisson observation error around the simulated `B` counts (called `Bo` here which is specified in the `datNames` column of the original `obsProcess` object).
+Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples, which can be obtained by using the `window()` function to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by taking every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before. Since `obsProcess` was specified in the model, the `predict()` function will also produce predictions that take the **observation** process into account. Here the observation process acts only on the $B$ class, and so this will produce an extra column called `Bo` here, which contains predictions assuming a Poisson observation error around the simulated `B` counts (called `Bo` here which is specified in the `datNames` column of the original `obsProcess` object).
 
 ```{r, boot-pred1}
 ## run predictions forward in time
@@ -285,7 +285,7 @@ post_plot[[2]] + ggplot2::ggtitle("Predictions at day 8")
 post_plot[[3]] + ggplot2::ggtitle("Predictions at day 11")
 ``
 
-We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, as long as we take account for the observation process. Here the observation process acts mostly as a means of modelling **underreporting**, and hence the **observed** counts tend to be less than the **simulated** counts (shown here by adding the observed data line to both the `B` and `Bo_obs` plots). We can also see that the uncertainties in the forecasts get smaller the more data we fit to and also as the epidemic begins to die out.
+We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, as long as we take account for the observation process. Here the observation process acts mostly as a means of modelling **underreporting**, and hence the **observed** counts tend to be less than the **simulated** counts (shown here by adding the observed data line to both the `B` and `Bo` plots). We can also see that the uncertainties in the forecasts get smaller the more data we fit to and also as the epidemic begins to die out.
 
 ```
 
