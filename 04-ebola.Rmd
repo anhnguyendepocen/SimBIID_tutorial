@@ -7,6 +7,8 @@ Here we will explore a more challenging example, that of an outbreak of Ebola in
 library(SimBIID)
 ```
 
+NEEDS TO BE CHECKED THAT UPDATES TO MODEL CODE WORK WITH THIS DATA SET
+
 This in an $SEIR$ model, where the rates of transition between the states is given by:
 
 \begin{align*}
