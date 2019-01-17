@@ -21,7 +21,7 @@ The other thing is that we will be matching at a set of given time points, so we
 
 Here we will place a Poisson observation process around the $B$ curve, such that:
 $$
-    B^o_t \sim Po(\rho B^s_t),
+    B^o_t \sim \mbox{Po}(\rho B^s_t),
 $$
 where $B^o_t$ is the **observed** $B$ count at time $t$, $B^s_t$ is the simulated count, and $\rho$ is some value in $(0, 1]$ corresponding to the **reporting rate**. 
 
