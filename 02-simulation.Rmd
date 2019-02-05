@@ -70,7 +70,7 @@ Currently this outputs a `vector` with entries of the form: `completed / t / u*`
 
 Here we can see that the simulation finished at time point `t = 6.63`, with the final state of the system given by `c(S = 761, I = 0, B = 0, C = 2)`.
 
-### Using `tspan`
+## Using `tspan`
 
 Alternatively, we may want to return the states of the system at a series of pre-determined points. We can do this by adding a `tspan` argument, which is a vector of time points at which we wish to return the states. We initialise the model by telling `mparseRcpp` that we wish to include a `tspan` argument e.g.
 
@@ -104,7 +104,7 @@ sims
 
 Here we can see that the epidemic is still going at time point `t = 14`.
 
-### Plotting simulations
+## Plotting simulations
 
 The `run()` method outputs a `SimBIID_runs` object, which can be plotted using the `plot()` function:
 
@@ -113,7 +113,7 @@ The `run()` method outputs a `SimBIID_runs` object, which can be plotted using t
 plot(sims)
 ```
 
-### Running multiple simulations
+## Running multiple simulations
 
 We can run multiple simulations by passing a `nrep` argument to `run()`. For example, to run 100 replicates and plot them:
 
