@@ -4,6 +4,7 @@ author: "TJ McKinley"
 site: bookdown::bookdown_site
 output:
     bookdown::pdf_book:
+        latex_engine: xelatex
         includes:
             in_header: header.tex
     bookdown::gitbook:
