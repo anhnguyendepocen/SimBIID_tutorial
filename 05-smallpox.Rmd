@@ -1,6 +1,8 @@
 # Example: Abakaliki smallpox outbreak
 
-Here we will explore fitting a simple $SIR$ model to the famous Abakaliki smallpox data (see e.g.  [@oneill_roberts:1999]). Firstly, load the `SimBIID` library:
+Here we will explore fitting a simple $SIR$ model to the famous Abakaliki smallpox data (see e.g.  @oneill_roberts:1999). This chapter is mainly for you to have a go at!
+
+Firstly, load the `SimBIID` library:
 
 ```{r, smallpox-simbiid, warning = F, message = F}
 ## load library
@@ -20,11 +22,10 @@ These data are the inter-removal times for `r length(smallpox)` individuals, whe
 ## SIR model
 
 Recall, for a continuous-time SIR model we have rates of transition between states given by:
-
-$$
-    P\left[\mbox{infection event in}~[t, t + \delta t)\right] = \beta S I + o(\delta t)\\
-    P\left[\mbox{removal event in}~[t, t + \delta t)\right] = \gamma I + o(\delta t)
-$$
+\begin{align*}
+    P\left[\mbox{infection event in}~[t, t + \delta t)\right] &= \beta S I + o(\delta t)\\
+    P\left[\mbox{removal event in}~[t, t + \delta t)\right] &= \gamma I + o(\delta t)
+\end{align*}
 
 ## Summary statistics
 

@@ -1,6 +1,6 @@
 # Approximate Bayesian Computation
 
-Here we will run the ABC-SMC routine of [@tonietal:2009]. Firstly, load the `SimBIID` library:
+Here we will run the ABC-SMC routine of @tonietal:2009. Firstly, load the `SimBIID` library:
 
 ```{r, abc-simbiid, warning = F, message = F}
 ## load library
@@ -20,7 +20,7 @@ finalsize <- 512
 
 ## Simulation model
 
-In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous section, and specify a model using the `mparseRcpp()` function. 
+In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous chapter, and specify a model using the `mparseRcpp()` function. 
 
 ```{r, abcsmc-model}
 ## setup simulation model
@@ -38,9 +38,22 @@ model <- mparseRcpp(
 )
 ```
 
-## Summary statistics
+## Arguments to `ABCSMC()` function
 
-The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see that the first argument to the function must be either an `ABCSMC` object (we will come to this later), or a named `vector` with entries containing the observed summary statistics to match to. In order to run an ABC routine, it is necessary to define a set of lower order summary statistics to match to. The data here are time-series counts of ***bed-rest *** and ***convalescence*** events. A very simple option would be to match to:
+The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see the main arguments to the `ABCSMC()` function , which are summarised below:
+
+* `x`: A named vector with entries containing the observed summary statistics to match to. Names must match to `tols` argument.
+* `priors`: A `data.frame` containing columns: `parnames`, `dist`, `p1` and `p2`, with number of rows equal to the number of parameters. The column `parname` simply gives names to each parameter for plotting and summarising. Each entry in the `dist` column must contain one of `c("unif", "norm", "gamma")`, and the corresponding `p1` and `p2` entries relate to the hyperparameters (lower and upper bounds in the uniform case; mean and standard deviation in the normal case; and shape and rate in the gamma case).
+* `func`: Function that runs the simulator and checks whether the simulation matches the data. The first four arguments must be `pars`, `data`, `tols` and `u`. If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `ncol(data)` and with entries in the same order as the columns of `data`.
+* `u`:A named vector of initial states.
+* `tols`: A vector or matrix of tolerances, with the number of rows defining the number of generations required, and columns defining the summary statistics to match to. If a vector, then the length determines the summary statistics. The columns/entries must match to those in `x`.
+* `ptols`: The proportion of simulated outcomes at each generation to use to derive adaptive tolerances.
+* `ngen`: The number of generations of ABC-SMC to run.
+* `npart`: An integer specifying the number of particles.
+
+### Summary statistics
+
+The first argument to `ABCSMC()` must be either an `ABCSMC` object (we will come to this later), or a named `vector` with entries containing the observed summary statistics to match to. The data here are time-series counts of ***bed-rest *** and ***convalescence*** events. A very simple option would be to match to:
 
 * final epidemic size (i.e. total number of removals across the time course of the epidemic), and
 * time of final removal (in this case when the epidemic process ceased).
@@ -52,11 +65,15 @@ Although simple, these two measures serve to give us some information on both th
 BS <- read.csv("BS.csv", header = T)
 
 ## create vector of summary statistics
-sumStat <- c(finalsize = 512, finaltime = max(BS$day))
+sumStat <- c(finalsize = 512, finaltime = 14)
 sumStat
 ```
 
+### Prior distributions {#priors}
+
 The second argument to the `ABCSMC()` function must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$, $\mu_I \sim U(0, 5)$ and $\mu_B \sim U(0, 1)$. We can specify this as follows:
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, abc-priors}
 ## set priors
@@ -68,18 +85,37 @@ priors$p2 <- c(5, 5, 1)
 priors
 ```
 
-Here the first column corresponds to the names of the parameters, the second to the type of prior distribution (`"unif"`, `"gamma"` or `"norm"`), and the final two columns to the hyperparameters (upper and lower limits for `"unif"`; shape and scale for `"gamma"`; or mean and standard deviation for `"norm"`).
+Here the first column corresponds to the names of the parameters, the second to the type of prior distribution (`"unif"`, `"gamma"` or `"norm"`), and the final two columns to the hyperparameters (upper and lower limits for `"unif"`; shape and rate for `"gamma"`; or mean and standard deviation for `"norm"`).
 
-The third argument is a function that runs the simulator and checks whether the simulation matches the data. The first four arguments to this function must be `pars`, `data`, `tols` and `u` (but you can pass more arguments in if required---see below). Within the function:
+### Simulation function
 
-* `pars`: is a *vector* of parameters (the order must match the order of the `priors` argument to the `ABCSMC` function);
-* `data`: a *vector* of data points to match to (must match the order of the `x` argument to the `ABCSMC` function);
+The third argument to `ABCSMC()` is a function that runs the simulator and checks whether the simulation matches the data. The first four arguments to this function must be `pars`, `data`, `tols` and `u` (but you can pass more arguments in if required---see below). Within the function:
+
+* `pars`: is a *vector* of parameters (the order must match the order of the `priors` argument to the `ABCSMC()` function);
+* `data`: a *vector* of data points to match to (must match the order of the `x` argument to the `ABCSMC()` function);
 * `tols`: a *vector* of tolerances (must match the order of `data`);
-* `u`: a *vector* of initial states (must match order of the `u` argument to the `ABCSMC` function).
+* `u`: a *vector* of initial states (must match order of the `u` argument to the `ABCSMC()` function).
 
-> **Please note: there is no internal check on you getting these orders correct. It is up to you to be careful when setting up this function**.
+> **Please note: there is no internal check on you getting these orders correct. It is up to you to be careful when setting up this function!**
 
-If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `length(data)` and with entries in the same order as `data`. It is possible to add further arguments to this function, as long as they appear after `pars`, `data`, `tols` and `u`. For example, in our case we are going to pass our simulation model in as an additional argument called `model` e.g.
+If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `length(data)` and with entries in the same order as `data`. It is possible to add further arguments to this function, as long as they appear after `pars`, `data`, `tols` and `u`. For example, in our case we are going to pass our simulation model in as an additional argument called `model` (see below).
+
+> **Pre-compilation**: For speed, the simulation models are coded using C/C++ (specifically through the use of the wonderful [`Rcpp`](https://cran.r-project.org/web/packages/Rcpp/index.html) package). This requires that the code is *compiled* into a binary file before running. The `run()` function does this automatically. However, there is an overhead attached with this, and since the ABC-SMC function needs to run the model lots of times, if we used the `run()` function then we would have to compile the model lots of times, which is very costly.
+> 
+> Instead, we will use a function in `SimBIID` called `compileRcpp()`, which pre-compiles the model into an R function that we can call within our simulation code without having to re-compile the model each time. Hence, to speed things up here we will not use the `run()` function directly, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function.
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+Hence, to compile the model we can run:
+
+```{r, abc-compmod}
+model <- compileRcpp(model)
+model
+```
+
+You can see that the compiled model is an R `function` that takes four arguments, `pars`, `tstart`, `tstop` and `u`. Convenient eh?
+
+Now we generate a function that runs the simulations, extracts the relevant summary statistics, and returns the correct output. Notice that we pass an additional argument `model` that contains our simulation function generated above.
 
 ```{r, abc-func}
 ## set up function to perform simulation and check matching
@@ -89,7 +125,7 @@ simBS <- function(pars, data, tols, u, model) {
     sims <- model(pars, 0, data[2] + tols[2], u)
     
     ## 'sims' is a vector of outputs of the form:
-    ## completed (1/0), t, S, I, B, C (here)
+    ## completed (1/0), t, S, I, B, C
     if(sims[1] == 0) {
         ## if epidemic still going at 
         ## time = finaltime + tol, then reject
@@ -109,36 +145,38 @@ simBS <- function(pars, data, tols, u, model) {
 }
 ```
 
-> **Note**: To speed things up here we will not use the `run()` function, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function. The `run()` function does all this internally, but here we will do it in two stages. 
-
-Hence, to compile the model we can run:
-
-```{r, abc-compmod}
-model <- compileRcpp(model)
-model
-```
-
-You can see that the compiled model is an R `function` that takes four arguments, `pars`, `tstart`, `tstop` and `u`. Convenient eh?
-
 > **Note**: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use `mparseRcpp()` (you could use the `SimInf` package here for example).
 
-The `simBS` function we have made therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. Next we need to specify the initial states of the system (as a named `vector`):
+The `simBS` function we have made therefore returns an `NA` if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does. 
+
+### Initial states {#inistates}
+
+Next we need to specify the initial states of the system (as a named `vector`):
 
 ```{r, abc-inistates}
 ## define initial states
 iniStates <- c(S = 762, I = 1, B = 0, C = 0)
 ```
 
-We can then either specify a `matrix` of tolerances to match to (these must be decreasing over each generation of the ABC-SMC algorithm), or alternatively specify the proportion of simulated outcomes at each generation to use to derive adaptive tolerances (e.g. if `ptols = 0.5`, then we choose tolerances at the $t$^th^ generation such that we would have accepted 50% of the simulations at the $(t - 1)$^th^ generation. Note that if we wish to use this latter approach, then we will need to give the algorithm some initial tolerances for generation 1.
+### Tolerances
+
+We can specify the tolerances in one of two ways:
+
+* either as a `matrix` of tolerances to match to (through the `tols` argument). Note that these must be decreasing over each generation of the ABC-SMC algorithm).
+* Alternatively, we can specify the proportion of simulated outcomes at each generation to use to derive adaptive tolerances (through the `ptols` argument). For example, if `ptols = 0.5`, then we choose tolerances at the $t$^th^ generation such that we would have accepted 50% of the simulations at the $(t - 1)$^th^ generation. Note that if we wish to use this latter approach, then we will need to give the algorithm some initial tolerances for generation 1 through the `tols` argument.
 
 > **Note**: the names and order of the tolerances must match the `x` argument.
+
+We will use the second approach, so need to specify a set of tolerances for the first generation only:
 
 ```{r, abc-tols}
 ## set tolerances
 tols <- c(finalsize = 50, finaltime = 50)
 ```
 
-Now let's run the routine for `ngen = 4` generations of ABC, with `ptols = 0.5` using 50 particles. Notice that we can pass the additional arguments that `simBS()` needs (`model` in this case) as additional arguments passed to `ABCSMC()`:
+## Running `ABCSMC()`
+
+Now let's run the routine for `ngen = 4` generations of ABC, with `ptols = 0.5` using `npart = 50` particles. Notice that we can pass the additional arguments that `simBS()` needs (`model` in this case) as additional arguments passed to `ABCSMC()`:
 
 ```{r, abc-abc}
 ## run ABC-SMC algorithm
@@ -147,15 +185,17 @@ post <- ABCSMC(
     priors = priors, 
     func = simBS, 
     u = iniStates, 
-    npart = 50,
     tols = tols, 
     ptol = 0.5,
     ngen = 4,
+    npart = 50,
     model = model
 )
 ```
 
- > **Note**: these algorithms are computationally intensive, so if you can spare the processing power, it's often good to set `parallel = T` to use parallel processing. However, depending on the model and your architecture, it's not always faster, so you might need to use your judgement. Windows users commiserate: your architecture doesn't support the `mclapply()` function, from the `parallel` package, so you'll always have to run in serial I'm afraid...
+ > **Note**: these algorithms are computationally intensive, so if you can spare the processing power, it's often good to set `parallel = T` to use parallel processing. However, depending on the model and your architecture, it's not always faster, so you might need to use your judgement. Windows users commiserate: your architecture doesn't support the `mclapply()` function (from the `parallel` package) so you'll always have to run in serial I'm afraid...
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 We can plot the approximate posterior distributions over the generations as follows:
 
@@ -172,12 +212,19 @@ plot(post, type = "output")
 
 Given the speed of the simulations, let's try running for a few more generations. We can pass the current `ABCSMC` object (`post` here) back into the `ABCSMC()` function and run for a few more generations:
 
-```{r, abc-abc1, fig.width = 8, fig.height = 4}
+```{r, abc-abc1, fig.width = 8, fig.height = 4, eval = F}
 ## run for a few more generations
 post <- ABCSMC(x = post, ptols = 0.5, ngen = 3, parallel = T)
 ```
 
-```{r, abc-plot2}
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+```{r, abc-abc11, fig.width = 8, fig.height = 4, echo = F}
+## run for a few more generations
+post <- ABCSMC(x = post, ptols = 0.5, ngen = 3, parallel = T)
+```
+
+```{r, abc-plot2, fig.width = 8, fig.height = 4}
 ## plot approximate posteriors and simulated
 ## summary statistics
 plot(post)
@@ -196,20 +243,22 @@ plot(post, "output", gen = c(1, 7))
 
 We can also produce joint density plots (if the `GGally` package is installed):
 
-```{r, abc-plot4, fig.width = 6, fig.height = 6, message = F, warning = F}
+```{r, abc-plot4, fig.width = 6, fig.height = 5, message = F, warning = F}
 ## joint distributions
 plot(post, gen = c(1, 7), joint = T)
 ```
 
-A call to `summary()` produces weighted estimates for the posterior means and standard deviations for the parameters in the final generation:
+A call to `summary()` produces weighted estimates for the posterior means and standard deviations for the parameters in the final generation, along with an estimate of the**effective sample size**:
 
 ```{r, abc-sum}
 summary(post)
 ```
 
-## Calculate posterior for $R_0$
+## Calculate posterior for transformations of parameters
 
-We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a `transfunc` argument to the `summary()` method (this function must return a `data.frame` object). For example, as discussed in the lecture, if we have $\beta$ and $\mu_I$, then we can also calculate the marginal posterior distribution for $R_0$ (here defined as $R_0 = \frac{\beta}{\mu_I}$), as well as, let's say, the length of the infectious period. Hence:
+We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a `transfunc` argument to the `summary()` method (this function must return a `data.frame` object, and the arguments to the function must match to names of the parameters used in the transformation). For example, as discussed in the lecture, if we have $\beta$ and $\mu_I$, then we can also calculate the marginal posterior distribution for $R_0$ (here defined as $R_0 = \frac{\beta}{\mu_I}$), as well as, let's say, the length of the infectious period. Hence we must define a function with arguments `beta` and `muI` (which match to parameters in the model), and returns a `data.frame` of transformed parameters:
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, abc-R0}
 ## function to calculate R0 and infectious period
@@ -240,24 +289,28 @@ summary(post, transfunc = R0gt)
 
 Matching to final epidemic size and the date of the final removal only is quite crude. We could also incorporate information regarding the observed $B$ and $C$ curves. One option would be to generate some summary measure of distance between the simulated and observed curves, something like a sum-of-squared differences e.g.
 $$
-    S_B = \sum_{t = 1}^T \left(B_t - B^*_t\right)^2,
+    S_B = \sum_{t = 1}^T \left(B_t - B^\prime_t\right)^2,
 $$
-where $B_t$ is the **observed** counts at time $t$, and $B^*_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly*, then $S_B = 0$, with large values of $S_B$ corresponding to poor matches between the simulated and observed counts.
+where $B_t$ is the **observed** counts at time $t$, and $B^\prime_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly*, then $S_B = 0$, with large values of $S_B$ corresponding to poor matches between the simulated and observed counts.
 
 To calculate $S_B$, we have to re-compile the model with the `tspan` option turned on.
 
 ```{r, abc-model2}
+## specify model
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
     pars = pars,
     tspan = T
 )
+## compile into R function
 model <- compileRcpp(model)
 model
 ```
 
 You can now see that the new function has an additional `tspan` argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a `tspan` argument to our `simBS` function. In addition, we will also need to pass the observed time-series counts to this function (which we call `B` here).
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, abc-func2}
 ## set up function to perform simulation and check matching
@@ -267,7 +320,7 @@ simBS <- function(pars, data, tols, u, model, tspan, B) {
     sims <- model(pars, 0, data[2] + tols[2], u, tspan)
     
     ## 'sims' is now a list, with the first element a vector
-    ## of the form: completed (1/0), t, S, I, B, C (here),
+    ## of the form: completed (1/0), t, S, I, B, C,
     ## and the second element is a matrix containing the 
     ## time-series counts
     simSum <- sims[[1]]
@@ -297,13 +350,19 @@ simBS <- function(pars, data, tols, u, model, tspan, B) {
 
 To create some initial tolerances, let's append an initial value for `SB` to our original `tols` object:
 
-```{r, abc-tols2, fig.width = 8, fig.height = 4}
+```{r, abc-tols2}
 ## set up new set of tolerances
 tols <- c(tols, SB = 1e6)
+```
 
+In practice, we cannot derive a measure of $S_B$ from the **observed** data alone, but we know that if the simulations match the observed data exactly, then $S_B = 0$, so we use this as our target, and append to the `sumStat` vector accordingly:
+
+```{r, abc-tols21}
 ## set up data to match to
 sumStat <- c(sumStat, SB = 0)
 ```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 Now we can run our routine again (notice the final row below contains the additional arguments we now need for `simBS()`):
 
@@ -323,10 +382,15 @@ post <- ABCSMC(
 )
 ```
 
-```{r, abc-plot6}
-## plot approximate posteriors and simulated
-## summary statistics
+```{r, abc-plot6, fig.height = 4, fig.width = 8}
+## plot approximate posteriors
 plot(post)
+```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+```{r, abc-plot61, fig.height = 4, fig.width = 8}
+## plot simulated summary measures
 plot(post, "output")
 ```
 
