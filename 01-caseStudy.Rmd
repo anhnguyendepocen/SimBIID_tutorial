@@ -1,26 +1,20 @@
 # Case Study
 
-To illustrate some of these ideas we can use a case study of influenza in a boarding school. These data are from a paper in the BMJ in 1978 [@anonymous:1978] and provided at [http://kingaa.github.io/short-course/stochsim/bsflu_data.txt](http://kingaa.github.io/short-course/stochsim/bsflu_data.txt). The file is available as "BS.csv".
-
-The event probabilities are:
+To illustrate some of these ideas we can use a case study of influenza in a boarding school. These data are from a paper in the BMJ in 1978 [@anonymous:1978] and provided in the [`outbreaks`](http://www.repidemicsconsortium.org/outbreaks/index.html) R package. Following @murray:2003, we will assume that bed-rest event correspond to the onset-of-infectiousness, with the event probabilities are:
 \begin{align*}
-    P\left[\mbox{infection ($I$) event in}~[t, t + \delta t)\right] &= \beta S I / N + o(\delta t)\\
-    P\left[\mbox{bed-rest ($B$) event in}~[t, t + \delta t)\right] &= \mu_I I + o(\delta t)\\
-    P\left[\mbox{convalescence ($C$) event in}~[t, t + \delta t)\right] &= \mu_B B + o(\delta t)
+    P\left[\mbox{infection event in}~[t, t + \delta t)\right] &= \beta S I / N + o(\delta t)\\
+    P\left[\mbox{removal event in}~[t, t + \delta t)\right] &= \gamma I + o(\delta t)
 \end{align*}
-Here we are going to match to the final epidemic size (512 children), and the sum-of-squared differences between the observed bed-rest counts (given by `BS$B`) and the simulated bed-rest counts (given by the $B$ class in our model). The initial population size is 763 pupils, and we assume an initial introduction of infection of a single boy at day 0.
-
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+Here we are going to match to the final epidemic size (512 children), and the sum-of-squared differences between the observed infection ("bed-rest") counts and the simulated infection counts (given by the $I$ class in our model). The initial population size is 763 pupils, and we assume an initial introduction of infection of a single boy at day 0.
 
 ```{r, case-BS, message = F, warning = F}
 ## load data
-BS <- read.csv("BS.csv", header = T)
+library(outbreaks)
+flu <- influenza_england_1978_school
+flu$day <- 1:nrow(flu)
 ```
 
-```{r, plot-BS, message = F, warning = F}
+```{r, plot-BS, message = F, warning = F, fig.height = 3.5, fig.width = 3.5}
 ## plot data
-ylims <- c(0, max(c(BS$B, BS$C)))
-plot(BS$day, BS$B, xlab = "Day", ylab = "Count", ylim = ylims, type = "l")
-lines(BS$day, BS$C, col = "blue")
-legend(10, 290, legend = c("B", "C"), col = c("black", "blue"), lty = 1)
+plot(flu$day, flu$in_bed, xlab = "Day", ylab = "Number of infections", type = "l")
 ```

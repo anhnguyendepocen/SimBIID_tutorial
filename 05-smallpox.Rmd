@@ -153,7 +153,18 @@ tols <- c(
 )
 
 ## run ABC-SMC algorithm
-post <- ABCSMC(data, priors, simSIR, iniStates, 50, tols, ptol = 0.2, ngen = 3, parallel = T, model = model)
+post <- ABCSMC(
+    x = data, 
+    priors = priors, 
+    func = simSIR, 
+    u = iniStates, 
+    tols = tols, 
+    ptol = 0.2, 
+    ngen = 3, 
+    npart = 50,
+    parallel = T, 
+    model = model
+)
 ``
 
 ```
