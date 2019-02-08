@@ -93,7 +93,7 @@ model <- mparseRcpp(
 
 ## Running the PMCMC algorithm
 
-Now we run the PMCMC algorithm for 5,000 iterations, using 50 particles. We pass the same initial states and priors as in the ABC-SMC practical, but with an additional prior for $\rho \sim U(0, 1)$ (since $\rho \in (0, 1)$). We print summaries to the screen every 1,000 iterations (`nprintsum = 1000`):
+Now we run the PMCMC algorithm for 5,000 iterations, using 25 particles. We pass the same initial states and priors as in the ABC-SMC practical, but with an additional prior for $\rho \sim U(0, 1)$ (since $\rho \in (0, 1)$). We print summaries to the screen every 1,000 iterations (`nprintsum = 1000`):
 
 ```{r, boot-priors}
 ## set priors
@@ -116,12 +116,14 @@ post <- PMCMC(
     priors = priors, 
     func = model, 
     u = iniStates,
-    npart = 50,
+    npart = 25,
     iniPars = iniPars,
     niter = 5000, 
     nprintsum = 1000
 )
 ```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, boot-trace, fig.width = 5, fig.height = 5}
 ## plot MCMC traces
@@ -130,8 +132,15 @@ plot(post, "trace")
 
 We can see that the chain looks like it's converging towards a stationary distribution, but let's run it for a bit longer. We can do this simply by passing our current `PMCMC` object back into the `PMCMC()` function:
 
-```{r, boot-extrun, fig.width = 5, fig.height = 5}
+```{r, boot-extrun, results = "hide"}
 post <- PMCMC(post, niter = 5000, nprintsum = 1000)
+```
+
+(I've suppressed the output for brevity here...)
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+```{r, boot-extrun-plot, fig.width = 5, fig.height = 5}
 plot(post, "trace")
 ```
 
@@ -140,6 +149,8 @@ plot(post, "trace")
 The mixing of the chain and the speed of convergence is related to the number of particles (amongst other things). There is no strong consensus, but a rule-of-thumb is to try to choose the number of particles such that the variance of the log-likelihood estimate at a suitable set of parameters $\theta^\prime$ is between 1--3. Clearly the larger the number of particles, the higher the computational burden, so in practice the additional computational burden of the simulations must be balanced against the improved mixing and faster convergence. This is tricky, so instead here we take a simpler approach.
 
 Firstly we run the chain for a fixed number of particles until it looks like the chain has converged. Then we choose a set of parameter values $\theta^\prime$ chosen to be the posterior medians. We then generate 500 estimates of the log-likelihood for a range of different numbers of particles, from which we can calculate the variance of these estimates. We then choose the smallest number of particles with a variance of the log-likelihood of less than 3.
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 Hence, from the training runs above we can remove some burn-in iterations, and extract the posterior medians:
 
@@ -153,7 +164,7 @@ postMed
 
 We can produce 500 estimates of the log-likelihood by setting the `fixpars = T` argument to the `PMCMC()` function, passing in the `postMed` estimates above.
 
-```{r, boot-train}
+```{r, boot-train, results = "hide"}
 flu_train <- PMCMC(
     x = flu_dat, 
     priors = priors, 
@@ -174,7 +185,7 @@ flu_train <- var(flu_train$output)
 flu_train
 ```
 
-Here the variance is `r round(flu_train, 2)`, which is much larger than 3. Hence let's try increasing the number of particles and repeating these steps.
+Here the variance is `r round(flu_train, 2)`, which is larger than 3. Hence let's try increasing the number of particles and repeating these steps.
 
 ```{r, boot-train1, results = "hide"}
 ## generate numbers of particles to trial
@@ -202,18 +213,14 @@ flu_train <- do.call("c", flu_train)
 flu_train
 ```
 
-Here we will choose the number of particles to be 75.
+Here we will choose the number of particles to be 50. We now start a new chain using 50 particles, and with starting values derived from the training runs.
 
-## Visualising and summarising the posterior distributions
-
-We now start a new chain using 75 particles, and with starting values derived from the training runs.
-
-```{r, boot-fullrun, eval = F}
+```{r, boot-fullrun, results = "hide"}
 post <- PMCMC(
     x = flu_dat, 
     priors = priors, 
     func = model, 
-    npart = 75, 
+    npart = 50, 
     u = iniStates, 
     iniPars = postMed,
     niter = 10000, 
@@ -221,29 +228,17 @@ post <- PMCMC(
 )
 ```
 
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+(Again I have suppressed the output here for brevity...)
 
-```{r, boot-fullrun1, echo = F}
-post <- PMCMC(
-    x = flu_dat, 
-    priors = priors, 
-    func = model, 
-    npart = 75, 
-    u = iniStates, 
-    iniPars = postMed,
-    niter = 10000, 
-    nprintsum = 1000
-)
-```
-
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
-
-We can visualise the MCMC chain and the approximate posterior distributions (after removing some burn-in):
-
-```{r, boot-fullsum}
+```{r, boot-fullsum, fig.width = 5, fig.height = 5}
 ## plot and summarise MCMC output
 plot(post, "trace")
 ```
+
+## Visualising and summarising the posterior distributions
+
+We can visualise the approximate posterior distributions (after removing some burn-in):
+
 
 ```{r, boot-fullsum1, fig.width = 8, fig.height = 4}
 ## remove burn-in
@@ -287,7 +282,7 @@ Once these have been obtained, we can use the corresponding posterior samples to
 
 As an example, let's pretend that we are at day 3 of the outbreak, and let's fit a model to the observed data up to that time point:
 
-```{r, boot-pred, results = "hide"}
+```{r, boot-pred, results = "hide", fig.show = "hide"}
 ## run PMCMC algorithm
 post <- PMCMC(
     x = flu_dat[1:3, ], 
@@ -302,7 +297,11 @@ post <- PMCMC(
 plot(post, "trace")
 ```
 
+(Output and trace plots suppressed here for brevity...)
+
 Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples. These can be obtained by using the `window()` function, to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by sub-sampling every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before. Since `obsProcess` was specified in the model, the `predict()` function will also produce predictions that take the **observation** process into account. Here the observation process acts only on the $I$ class, and so this will produce an extra column called `Iobs` here, which contains predictions assuming a Poisson observation error around the simulated `I` counts (called `Iobs` here which is specified in the `datNames` column of the original `obsProcess` object).
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, boot-pred1}
 ## run predictions forward in time
@@ -312,12 +311,11 @@ post_pred <- predict(window(post, start = 2000, thin = 8), tspan = 4:14)
 plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9))
 ```
 
-
 The uncertainties up to the blue dashed line are derived from the bootstrap particle filter, whereas the uncertainties going forward are from direct simulations from the model. Since the $I$ curve can be compared directly to the observed data, we can add the observed data in as additional arguments to the `plot()` method here. We just have to add an additional `matchData` argument to tell the function which columns of the data to plot against which output from the model. In this case we pass the complete data to the function, just so that we can see how close the predictions (estimated from the model fitted at the dashed blue time point) were to the actual data. If you were doing this in real time you would only have the data up to the dashed blue time point.
 
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
-
 > The `matchData = c("Iobs = I")` below tells the `plot()` function to match the column called `Iobs` in the data set to the `I` class from the simulations.
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, boot-pred2}
 ## plot predictions and add observed I curve
