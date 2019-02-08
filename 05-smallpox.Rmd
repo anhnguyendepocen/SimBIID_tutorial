@@ -1,6 +1,6 @@
 # Example: Abakaliki smallpox outbreak
 
-Here we will explore fitting a simple $SIR$ model to the famous Abakaliki smallpox data (see e.g.  @oneill_roberts:1999). This chapter is mainly for you to have a go at!
+Here we will explore fitting a simple $SIR$ model to the famous Abakaliki smallpox data [see e.g. @oneill_roberts:1999]. This chapter is mainly for you to have a go at!
 
 Firstly, load the `SimBIID` library:
 
@@ -16,8 +16,7 @@ Then load in the data:
 smallpox <- as.numeric(unlist(read.csv("smallpox.csv", header = F)))
 summary(smallpox)
 ```
-
-These data are the inter-removal times for `r length(smallpox)` individuals, where the times have been relabelled such that time 0 is the time of the first removal---see e.g. [@oneill_roberts:1999] for more details.
+Note that these data, originally from [@thompson_foege:1968], can be found in the `outbreaks` package, albeit in a slightly different form. We use the simpler data in [@oneill_roberts:1999], which correspond to the inter-removal times for `r length(smallpox)` individuals, where the times have been relabelled such that time 0 is the time of the first removal.
 
 ## SIR model
 

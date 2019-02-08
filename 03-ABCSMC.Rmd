@@ -41,16 +41,16 @@ model <- mparseRcpp(
 
 ## Arguments to `ABCSMC()` function
 
-The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`), you will see the main arguments to the `ABCSMC()` function , which are summarised below:
+The ABC-SMC routine is coded in a function called `ABCSMC()`. If you look at the help file for the `ABCSMC()` function (e.g. `?ABCSMC`) you will see the main arguments, which are summarised below:
 
-* `x`: A named vector with entries containing the observed summary statistics to match to. Names must match to `tols` argument.
-* `priors`: A `data.frame` containing columns: `parnames`, `dist`, `p1` and `p2`, with number of rows equal to the number of parameters. The column `parname` simply gives names to each parameter for plotting and summarising. Each entry in the `dist` column must contain one of `c("unif", "norm", "gamma")`, and the corresponding `p1` and `p2` entries relate to the hyperparameters (lower and upper bounds in the uniform case; mean and standard deviation in the normal case; and shape and rate in the gamma case).
-* `func`: Function that runs the simulator and checks whether the simulation matches the data. The first four arguments must be `pars`, `data`, `tols` and `u`. If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `ncol(data)` and with entries in the same order as the columns of `data`.
-* `u`:A named vector of initial states.
-* `tols`: A vector or matrix of tolerances, with the number of rows defining the number of generations required, and columns defining the summary statistics to match to. If a vector, then the length determines the summary statistics. The columns/entries must match to those in `x`.
-* `ptols`: The proportion of simulated outcomes at each generation to use to derive adaptive tolerances.
-* `ngen`: The number of generations of ABC-SMC to run.
-* `npart`: An integer specifying the number of particles.
+* `x`: a named vector with entries containing the observed summary statistics to match to. Names must match to `tols` argument.
+* `priors`: a `data.frame` containing columns: `parnames`, `dist`, `p1` and `p2`, with number of rows equal to the number of parameters. The column `parname` simply gives names to each parameter for plotting and summarising. Each entry in the `dist` column must contain one of `c("unif", "norm", "gamma")`, and the corresponding `p1` and `p2` entries relate to the hyperparameters (lower and upper bounds in the uniform case; mean and standard deviation in the normal case; and shape and rate in the gamma case).
+* `func`: function that runs the simulator and checks whether the simulation matches the data. The first four arguments must be `pars`, `data`, `tols` and `u`. If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `ncol(data)` and with entries in the same order as the columns of `data`.
+* `u`: a named vector of initial states.
+* `tols`: a vector or matrix of tolerances, with the number of rows defining the number of generations required, and columns defining the summary statistics to match to. If a vector, then the length determines the summary statistics. The columns/entries must match to those in `x`.
+* `ptols`: the proportion of simulated outcomes at each generation to use to derive adaptive tolerances.
+* `ngen`: the number of generations of ABC-SMC to run.
+* `npart`: an integer specifying the number of particles.
 
 ### Summary statistics
 
@@ -103,7 +103,7 @@ The third argument to `ABCSMC()` is a function that runs the simulator and check
 
 If the simulations do not match the data then the function must return an `NA`, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to `length(data)` and with entries in the same order as `data`. It is possible to add further arguments to this function, as long as they appear after `pars`, `data`, `tols` and `u`. For example, in our case we are going to pass our simulation model in as an additional argument called `model` (see below).
 
-> **Pre-compilation**: For speed, the simulation models are coded using C/C++ (specifically through the use of the wonderful [`Rcpp`](https://cran.r-project.org/web/packages/Rcpp/index.html) package). This requires that the code is *compiled* into a binary file before running. The `run()` function does this automatically. However, there is an overhead attached with this, and since the ABC-SMC function needs to run the model lots of times, if we used the `run()` function then we would have to compile the model lots of times, which is very costly.
+> **Pre-compilation**: For speed, the simulation models in `SimBIID` are coded using C/C++ (specifically through the use of the wonderful [`Rcpp`](https://cran.r-project.org/web/packages/Rcpp/index.html) package). This requires that the code is *compiled* into a binary file before running. The `run()` function does this automatically. However, there is an overhead attached with this, and since the ABC-SMC function needs to run the model lots of times, if we used the `run()` function then we would have to compile the model lots of times, which is very costly.
 > 
 > Instead, we will use a function in `SimBIID` called `compileRcpp()`, which pre-compiles the model into an R function that we can call within our simulation code without having to re-compile the model each time. Hence, to speed things up here we will not use the `run()` function directly, rather we will create the model using `mparseRcpp()`, and then compile it using `compileRcpp()`, before passing the compiled model to the `ABCSMC()` function.
 
@@ -165,7 +165,7 @@ iniStates <- c(S = 762, I = 1, R = 0)
 
 We can specify the tolerances in one of two ways:
 
-* either as a `matrix` of tolerances to match to (through the `tols` argument). Note that these must be decreasing over each generation of the ABC-SMC algorithm).
+* either as a `matrix` of tolerances to match to (through the `tols` argument). Note that these must be decreasing over each generation of the ABC-SMC algorithm.
 * Alternatively, we can specify the proportion of simulated outcomes at each generation to use to derive adaptive tolerances (through the `ptols` argument). For example, if `ptols = 0.5`, then we choose tolerances at the $t$^th^ generation such that we would have accepted 50% of the simulations at the $(t - 1)$^th^ generation. Note that if we wish to use this latter approach, then we will need to give the algorithm some initial tolerances for generation 1 through the `tols` argument.
 
 > **Note**: the names and order of the tolerances must match the `x` argument.
@@ -278,12 +278,12 @@ We can plot distributions for transformed variables in a similar way:
 plot(post, transfunc = R0fn, gen = c(1, 7))
 ```
 
-Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is greater than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie above one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate an estimate as below.)
+Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that $R_0$ is greater than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for $R_0$ that lie above one. (**Note**: this would be slightly *biased*, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate a weighted estimate as below.)
 
 ```{r, abc-R01}
 ## function to calculate whether R0 > 1
 R0gt <- function(beta, gamma) {
-    data.frame(R0gt = as.numeric((763 * beta / gamma) > 1))
+    data.frame(R0gt = as.numeric((beta / gamma) > 1))
 }
 summary(post, transfunc = R0gt)
 ```
@@ -294,7 +294,7 @@ Matching to final epidemic size and the date of the final removal only is quite 
 $$
     S_I = \sum_{t = 1}^T \left(I_t - I^\prime_t\right)^2,
 $$
-where $I_t$ is the **observed** counts at time $t$, and $I^\prime_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly*, then $S_I = 0$, with large values of $S_I$ corresponding to poor matches between the simulated and observed counts.
+where $I_t$ is the **observed** counts at time $t$, and $I^\prime_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly* then $S_I = 0$; with large values of $S_I$ corresponding to poor matches between the simulated and observed counts.
 
 To calculate $S_I$, we have to re-compile the model with the `tspan` option turned on.
 
@@ -396,6 +396,8 @@ plot(post)
 ## plot simulated summary measures
 plot(post, "output")
 ```
+
+Notice that the $S_I$ metrics don't get very close to 0 here. This is because the metric is a **one-sided** metric and so we always expect some variability away from zero. Due to the stochastic nature of the model, to get a metric close to zero we would have to match almost all time points exactly, which would be very computationally expensive. Hence we use this to tweak the outputs, but most of the variability is being constrained by the `finaltime` and `finalsize` metrics here, so getting these small is more important that getting $S_I$ small. Ideally you would want to run for more generations to tighten up each of these outputs.
 
 ```{task}
 Add another summary measure corresponding to the sum-of-squared distances between the observed and simulated $R$ curves (assume that the `flu$convalescence` column corresponds to observed $R$ counts). Re-run your ABC-SMC routine. 

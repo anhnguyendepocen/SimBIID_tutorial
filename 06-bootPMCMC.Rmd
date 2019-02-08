@@ -4,7 +4,7 @@ Here we will return to the influenza in a boarding school example. Please note t
 
 [https://kingaa.github.io/sbied/mif/mif.html#an-iterated-filtering-algorithm-if2](https://kingaa.github.io/sbied/mif/mif.html#an-iterated-filtering-algorithm-if2).
 
-Here we use a simpler model (see @murray:2003) but use a full Bayesian approach using a particle Markov chain Monte Carlo (PMCMC) routine [@andrieuetal:2010] with a bootstrap particle filter to estimate the likelihood [@gordonetal:1993], as described in the lectures. 
+Here we use a simpler model [see @murray:2003] but use a full Bayesian approach using a particle Markov chain Monte Carlo (PMCMC) routine [@andrieuetal:2010] with a bootstrap particle filter to estimate the likelihood [@gordonetal:1993], as described in the lectures. 
 
 Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C. We could use `pomp` to fit this model using the same PMCMC routine described here, but the syntax is different to the style we are used to using `SimInf`. So instead the `SimBIID` package provides a function `PMCMC()` that runs this algorithm, and if you pass a `SimBIID_model` object to this function, it will automatically compile in the correct manner.
 
@@ -24,13 +24,13 @@ library(SimBIID)
 
 If you look at the help file for the `PMCMC()` function (e.g. `?PMCMC`), you will see the main arguments to the `PMCMC()` function , which are summarised below:
 
-* `x`: A `data.frame` containing time series count data, with the first column called `t`, followed by columns of time-series counts. The time-series counts columns must be in the order of the `counts` object in the `func` function (see below).
-* `priors`: A `data.frame` containing prior information (in the same format as for the `ABCSMC()` function---see Section \@ref(priors)).
-* `func`: A `SimBIID_model` object (which can be created using `mparseRcpp()`). This must have a stochastic observation process specified---see Section \ref@{obsprocess}.
-* `u`: A named vector of initial states (in the same format as for the `ABCSMC()` function---see Section \@ref(inistates)).
-* `npart`: An integer specifying the number of particles for the bootstrap particle filter.
-* `iniPars`: A named vector of initial values for the parameters of the model. If left unspecified, then these are sampled from the prior distribution(s).
-* `niter`: An integer specifying the number of iterations to run the MCMC.
+* `x`: a `data.frame` containing time series count data, with the first column called `t`, followed by columns of time-series counts. The time-series counts columns must be in the order of the `counts` object in the `func` function (see below).
+* `priors`: a `data.frame` containing prior information (in the same format as for the `ABCSMC()` function---see Section \@ref(priors)).
+* `func`: a `SimBIID_model` object (which can be created using `mparseRcpp()`). This must have a stochastic observation process specified---see Section \ref@{obsprocess}.
+* `u`: a named vector of initial states (in the same format as for the `ABCSMC()` function---see Section \@ref(inistates)).
+* `npart`: an integer specifying the number of particles for the bootstrap particle filter.
+* `iniPars`: a named vector of initial values for the parameters of the model. If left unspecified, then these are sampled from the prior distribution(s).
+* `niter`: an integer specifying the number of iterations to run the MCMC.
 
 ### Data {#data}
 
@@ -57,7 +57,7 @@ $$
 $$
 where $I_t$ is the **observed** $I$ count at time $t$, $I^\prime_t$ is the simulated count, and $\rho$ is some value in $(0, 1]$ corresponding to the **reporting rate**. We add a small constant ($10^{-6}$ here) following the suggestion [here](https://kingaa.github.io/sbied/mif/mif.html#applying-if2-to-the-boarding-school-influenza-outbreak). This is important to prevent numerical errors, since the simulated counts $I^\prime_t$ could be zero, which would result in the Poisson rate parameter being zero, which violates the conditions of the Poisson distribution, and would thus produce non-finite likelihood estimates. The addition of a small constant prevents this from happening.
 
-Note that other (better) observation processes could also be used, but this choice allows us to produce some reasonable estimates in a reasonable compuattional load. The observed data, $I_t$, is coded as the `Iobs` column in the `flu_dat` data frame---see Section \@ref{data}. To set up the observation process defined above, we define a `data.frame` as follows:
+Note that other (better) observation processes could also be used, but this choice allows us to produce some reasonable estimates in a reasonable computational load. The observed data, $I_t$, is coded as the `Iobs` column in the `flu_dat` data frame---see Section \@ref(data). To set up the observation process defined above, we define a `data.frame` as follows:
 
 ```{r, boot-obs}
 ## set up observation process
@@ -71,7 +71,7 @@ obs <- data.frame(
 obs
 ```
 
-Here we note that we need to include the `rho` parameter into our model definition. The other key point is that we do not specify a `tspan` argument. Rather, these will be determined by the `x` argument that we specified in Section \@ref{data}. Hence for completeness the simulation model is specified as:
+Here we note that we need to include the `rho` parameter into our model definition (through the `pars` argument). The other key point is that we do not specify a `tspan` argument. Rather, these will be determined by the `x` argument that we specified in Section \@ref(data). Hence for completeness the simulation model is specified as:
 
 ```{r, boot-model}
 ## set up model
@@ -102,10 +102,13 @@ priors <- data.frame(
     dist = rep("unif", 3), 
     stringsAsFactors = F)
 priors$p1 <- c(0, 0, 0)
-priors$p2 <- c(1, 5, 1)
+priors$p2 <- c(5, 5, 1)
 
 ## define initial states
 iniStates <- c(S = 762, I = 1, R = 0)
+
+## set initial parameters (informed by ABC-SMC)
+iniPars <- c(beta = 2.4, gamma = 1.4, rho = 0.99)
 
 ## run PMCMC algorithm
 post <- PMCMC(
@@ -113,20 +116,21 @@ post <- PMCMC(
     priors = priors, 
     func = model, 
     u = iniStates,
-    npart = 50, 
+    npart = 50,
+    iniPars = iniPars,
     niter = 5000, 
     nprintsum = 1000
 )
 ```
 
-```{r, boot-trace}
+```{r, boot-trace, fig.width = 5, fig.height = 5}
 ## plot MCMC traces
 plot(post, "trace")
 ```
 
 We can see that the chain looks like it's converging towards a stationary distribution, but let's run it for a bit longer. We can do this simply by passing our current `PMCMC` object back into the `PMCMC()` function:
 
-```{r, boot-extrun}
+```{r, boot-extrun, fig.width = 5, fig.height = 5}
 post <- PMCMC(post, niter = 5000, nprintsum = 1000)
 plot(post, "trace")
 ```
@@ -170,7 +174,7 @@ flu_train <- var(flu_train$output)
 flu_train
 ```
 
-Here the variance is `r flu_train`, which is much larger than 3. Hence let's try increasing the number of particles and repeating these steps.
+Here the variance is `r round(flu_train, 2)`, which is much larger than 3. Hence let's try increasing the number of particles and repeating these steps.
 
 ```{r, boot-train1, results = "hide"}
 ## generate numbers of particles to trial
