@@ -1,0 +1,150 @@
+# Example: Bombay plague epidemic 1905--1906
+
+Here we will explore fitting a simple $SIR$ model to the famous Bombay plague epidemic data (see e.g. @bombay:1907; @kermack_mckendrick:1927; @murray:2003). 
+
+Firstly, load the `SimBIID` library:
+
+```{r, plague-simbiid, warning = F, message = F}
+## load library
+library(SimBIID)
+```
+
+Then load in the data:
+
+```{r, plague-data}
+## read in the data and convert to vector
+plague <- read.csv("plague.csv")
+plague$Date <- as.Date(as.character(plague$Date), format = "%d %b %Y")
+summary(plague)
+```
+
+These data are the number of deaths from ....
+
+## SIR model
+
+Recall, for a continuous-time SIR model we have rates of transition between states given by:
+\begin{align*}
+    P\left[\mbox{infection event in}~[t, t + \delta t)\right] &= \beta S I / N + o(\delta t)\\
+    P\left[\mbox{removal event in}~[t, t + \delta t)\right] &= \gamma I + o(\delta t)
+\end{align*}
+
+## Summary statistics
+
+In the first instance, as before, let's match to:
+
+* final epidemic size (i.e. total number of removals across the time course of the epidemic), and
+* time of final removal (in this case when the epidemic process ceased).
+
+Although simple, these two measures serve to give us some information on both the *length* and *magnitude* of the epidemic, and should contain useful information about the parameters. In this case the final removal time is ??????? days and the final epidemic size is ????? individuals.
+
+## Simulation model
+
+In order to use the `ABCSMC()` function, we need to define a function that runs the simulations and returns an `NA` if the simulation is rejected, or a vector of summary statistics if it is not.
+
+> **Note**: one thing to be careful of for this particular system, is that the data are aligned to time 0 being the time of the first *removal*, not *infection*. Just for illustration, we are going to simplify things in the first instance, and assume that the first infection happens 10 days before the first removal, which corresponds to adding 10 days to each of our observed removal times.
+
+Copy-and-paste the function below. Go through this function and understand what each line is doing.
+
+```{r, plague-setup}
+## define the targeted summary statistics
+data <- c(
+    finalsize = 9219, 
+    finaltime = 52
+)
+
+## set initial states
+iniStates <- c(S = 977821, I = 1, R = 0)
+```
+
+
+```{r, plague-solsetup}
+## set up models
+transitions <- c(
+    "S -> beta * S * I / (S + I + R) -> I", 
+    "I -> gamma * I -> R"
+)
+compartments <- c("S", "I", "R")
+pars <- c("beta", "gamma")
+model <- mparseRcpp(
+    transitions = transitions, 
+    compartments = compartments,
+    pars = pars,
+    addVars = c("finalsize", "tol_R"),
+    stopCrit = "R > (finalsize + tol_R)"
+)
+## compile model for use in ABC
+model <- compileRcpp(model)
+model
+```
+
+```{r,plague-solfunc}
+    
+## set up function to perform simulation
+simSIR <- function(pars, data, tols, u, model) {
+    ## run model
+    sims <- model(pars, 0, data[2] + tols[2], u, data[1], tols[1])
+    
+    ## this returns a vector of the form:
+    ## completed (1/0), t, S, I, R (here)
+    if(sims[1] == 0) {
+        ## if simulation rejected
+        return(NA)
+    } else {
+        ## extract finaltime and finalsize
+        finaltime <- sims[2]
+        finalsize <- sims[5]
+    }
+    #print(c(finalsize, finaltime))
+    
+    ## return vector if match, else return NA
+    if(all(abs(c(finalsize, finaltime) - data) <= tols)){
+        return(c(finalsize, finaltime))
+    } else {
+        return(NA)
+    }
+}
+```
+
+```{r, plague-solpriors}
+## set priors
+priors <- data.frame(
+    parnames = c("beta", "gamma"), 
+    dist = rep("unif", 2), 
+    stringsAsFactors = F
+)
+priors$p1 <- c(0, 0)
+priors$p2 <- c(10, 10)
+```
+
+```{r, plague-solabc}
+## set tolerances
+tols <- c(
+    finalsize = 10000,
+    finaltime = 50
+)
+
+## run ABC-SMC algorithm
+post <- ABCSMC(data, priors, simSIR, iniStates, tols, ptol = 0.5, ngen = 10, npart = 50, parallel = T, model = model)
+```
+
+```{r, plague-solplot, fig.width = 10, fig.height = 5}
+## plot approximate posteriors
+plot(post)
+
+## plot accepted outputs
+plot(post, "output")
+
+## summarise posteriors
+summary(post)
+```
+
+```{r, plague-R0}
+## function to calculate R0 and infectious period
+R0fn <- function(beta, gamma) {
+    data.frame(R0 = beta / gamma, infperiod = 1 / gamma)
+}
+summary(post, transfunc = R0fn)
+```
+```{r, plague-joint}
+plot(post, gen = c(1, 10), joint = T)
+```
