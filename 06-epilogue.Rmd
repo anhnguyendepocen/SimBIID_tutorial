@@ -1,0 +1,18 @@
+# Epilogue
+
+Hopefully these practicals have given you some insight into the types of appraoches that we can use in order to fit infectious disease models to real-data, and some understanding of the complexities involved. There are many other techniques available, each with their own advantages and disadvantages. Some key (but not exhaustive) references (with a focus on epidemic modelling) are:
+    
+* **Data-augmented MCMC** [e.g. @gibson_renshaw:1998; @oneill_roberts:1999; @cauchemez_ferguson:2008; @jewelletal:2009a]
+* **Sequential Monte Carlo** [@cauchemezetal:2008]
+* **Maximum likelihood via iterated filtering** [@ionidesetal:2006]
+* **Approximate Bayesian Computation** [e.g. @tonietal:2009; @mckinleyetal:2009; @conlanetal:2012; @brookspollocketal:2014]
+* **Pseudo-marginal methods** [e.g. @oneilletal:2000; @beaumont:2003; @andrieu_roberts:2009; @mckinleyetal:2014]
+* **Particle MCMC **[@andrieuetal:2010; @drovandietal:2016]
+* **Synthetic likelihood** [@wood:2010]
+* **History Matching and emulation** [@andrianakisetal:2015; @mckinleyetal:2018]
+* **Bayesian Optimization for Likelihood-Free Inference of simulator-based statistical models (BOLFI)** [@gutmann_corander:2016]
+
+Some other important points to remember:
+
+* *Here we have use small numbers of particles in our ABC-SMC routines so that we can feasibly run the practicals in time. If you use these techniques in your own research make sure that you use a much larger number of particles to produce more accurate estimates.*
+* *The same goes for the number of iterations for the PMCMC chains. In practice you will need to run for much longer to properly assess convergence and mixing.*

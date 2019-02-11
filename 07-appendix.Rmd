@@ -48,4 +48,6 @@ if(opts_knit$get("rmarkdown.pandoc.to") == "latex"){
 cat(x)
 ```
 
+\newgeometry{margin=1in}
+
 # References

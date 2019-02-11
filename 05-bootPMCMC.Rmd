@@ -274,6 +274,18 @@ summary(post, transfunc = R0fn)
 
 ```
 
+```{task, title = "Question"}
+Notice that the posterior mean estimates are different to those obtained from the ABC-SMC algorithm that we used earlier. Why do you think this is so?
+```
+
+```{solution, title = "Answer"}
+It could be for various reasons. Firstly note that even though the underlying epidemic model is the same (both $SIR$ models), in the PMCMC approach we have added a Poisson observation process, with an additional under-reporting parameter. Therefore even though we are matching to all data points in the PMCMC algorithm, there is additional uncertainty around each data point, which may allow for a wider variety of simulations to be "accepted" compared to the ABC-SMC approach, which only accepts simulations that produce final epidemic sizes and dates of final removal within some small tolerance of the observed data. On the other hand, the ABC-SMC only matches to two summary statistics, rather than all data points, and so there might be some loss-of-information here. 
+
+The important point to note is that in the ABC approaches there is some loss-of-information due to the reduction of the full data sets down to a lower dimensional set of summary statistics. On top of that there is the choice of tolerance which will also have an impact. On the other hand the PMCMC approach will target the true posterior, but often (as in the examples here) this approach is usually made tractable by the addition of a stochastic obervation process. The key point is that the inclusion of an observation process changes the model, and thus the posterior will be different to the posterior for a model with a deterministic observation process. 
+
+Therefore one has to be careful when defining the model. In some cases adding some stochastic noise to the observations can make the system easier to fit, but unless the noise has some real-world interpretation, either as observation error, measurement error or model discrepancy, then in essence this additional noise is essentially another way of doing approximate Bayesian computation!
+```
+
 ## Predictive posterior distributions
 
 We can also use the model to predict the future course of an outbreak (with uncertainties). The `SimBIID` packages provides a `predict()` method for `PMCMC` objects. To produce predictions we first fit a model to the current available data. This produces a set of posterior samples for each of the parameters. Then, for each set of posterior samples we can produce an estimate of the states of the system at the final observed time point. We do this by running a bootstrap particle filter over the observed time points for each parameter set, and then sampling a trajectory from the weighted set of particles. Hence we also obtain a set of posterior samples for the states of the system at the final observed time point. 
@@ -341,23 +353,35 @@ Repeat the above procedure, refitting at days 5, 8 and 11. What happens to the u
 post_pred <- list()
 pred_days <- c(5, 8, 11)
     
+pdf("testTrace.pdf")
 for(i in 1:length(pred_days)) {
+
+    ## extract posterior medians from previous time step
+    ## as initial conditions
+    iniPars <- window(post$pars, start = 5000)
+    iniPars <- as.matrix(iniPars)
+    iniPars <- apply(iniPars, 2, median)
+    iniPars <- iniPars[-length(iniPars)]
+
     ## run PMCMC algorithm
     post <- PMCMC(
         x = flu_dat[1:pred_days[i], ], 
         priors = priors, 
         func = model, 
         u = iniStates, 
-        npart = 50, 
+        npart = 50,
+        iniPars = iniPars,
         niter = 10000, 
         nprintsum = 1000
     )
     ## plot traces
     plot(post, "trace")
     
+    
     ## run predictions forward in time
     post_pred[[i]] <- predict(window(post, start = 2000, thin = 8), tspan = (pred_days[i] + 1):14)
 }
+dev.off()
 ``
 
 ``{r, boot-solplotpred}
