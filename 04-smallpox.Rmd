@@ -20,10 +20,10 @@ Note that these data, originally from [@thompson_foege:1968], can be found in th
 
 ## SIR model
 
-Recall, for a continuous-time SIR model we have rates of transition between states given by:
+Recall, for a continuous-time $SIR$ model we have rates of transition between states given by:
 \begin{align*}
-    P\left[\mbox{infection event in}~[t, t + \delta t)\right] &= \beta S I + o(\delta t)\\
-    P\left[\mbox{removal event in}~[t, t + \delta t)\right] &= \gamma I + o(\delta t)
+    P\left[S_{t + \delta t} = S_t - 1, I_{t + \delta t} = I_t + 1\right] &\approx \beta S I\\
+    P\left[I_{t + \delta t} = I_t - 1, R_{t + \delta t} = R_t + 1\right] &\approx \gamma I\\
 \end{align*}
 
 ## Summary statistics

@@ -12,16 +12,17 @@ To set up the model above we need a character vector of transition rates, as per
 ```{r, sim-trans}
 ## test compilation model
 transitions <- c(
-    "S -> beta * S * I / (S + I + R) -> I", 
-    "I -> gamma * I -> R"
+    "S -> beta * S * I / (S + I + R + R1) -> I", 
+    "I -> gamma * I -> R",
+    "R -> gamma1 * R -> R1"
 )
 ```
 
 We also need a vector of compartment names and parameter names (note that we do not set values for the parameters here---instead we pass these and the initial states into later functions):
 
 ```{r, sim-comp}
-compartments <- c("S", "I", "R")
-pars <- c("beta", "gamma")
+compartments <- c("S", "I", "R", "R1")
+pars <- c("beta", "gamma", "gamma1")
 ```
 
 We then build a model using the `mparseRcpp()`:
@@ -51,25 +52,25 @@ set.seed(1)
 
 ```{r, sim-run}
 ## define parameters
-simPars <- c(beta = 2.5, gamma = 1)
+simPars <- c(beta = 2.5, gamma = 1, gamma1 = 1)
 
 ## define initial states
-iniStates <- c(S = 762, I = 1, R = 0)
+iniStates <- c(S = 762, I = 1, R = 0, R1 = 0)
 
 ## run model
 sims <- run(
     model = model,
     pars = simPars,
     tstart = 0,
-    tstop = 14,
+    tstop = 15,
     u = iniStates
 )
 sims
 ```
 
-Currently this outputs a `vector` with entries of the form: `completed / t / u*`, where `completed` is a binary variable containing the value `1` if the epidemic finished before time point `tstop`, and `0` otherwise. Then the value `t` is the time point when the epidemic finished (or `tstop` if the epidemic was still ongoing when the function exited), and I'm using `u*` generically to correspond to a copy of the states of the system at the final time point (here $S$, $I$ and $R$).
+Currently this outputs a `vector` with entries of the form: `completed / t / u*`, where `completed` is a binary variable containing the value `1` if the epidemic finished before time point `tstop`, and `0` otherwise. Then the value `t` is the time point when the epidemic finished (or `tstop` if the epidemic was still ongoing when the function exited), and I'm using `u*` generically to correspond to a copy of the states of the system at the final time point (here $S$, $I$, $R$ and $R_1$).
 
-Here we can see that the simulation finished at time point `t = `r round(sims$sums[3], 2)``, with the final state of the system given by ``r paste0("c(S = ", sims$sums[4], ", I = ", sims$sums[5], ", B = ", sims$sums[6], ")")``.
+Here we can see that the simulation finished at time point `t = `r round(sims$sums[3], 2)``, with the final state of the system given by ``r paste0("c(S = ", sims$sums[4], ", I = ", sims$sums[5], ", R = ", sims$sums[6], ", R1 = ", sims$sums[7], ")")``.
 
 ## Using `tspan`
 
@@ -98,7 +99,7 @@ sims <- run(
     model = model,
     pars = simPars,
     tstart = 0,
-    tstop = 14,
+    tstop = 15,
     u = iniStates,
     tspan = 1:14
 )
@@ -127,7 +128,7 @@ sims <- run(
     model = model,
     pars = simPars,
     tstart = 0,
-    tstop = 14,
+    tstop = 15,
     u = iniStates,
     tspan = 1:14,
     nrep = 100

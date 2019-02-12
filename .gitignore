@@ -10,3 +10,5 @@ _bookdown*
 # ignore installation files
 installSimBIID.R
 
+# ignore testTrace plot
+testTrace.pdf

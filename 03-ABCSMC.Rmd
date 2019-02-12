@@ -14,7 +14,7 @@ flu <- influenza_england_1978_school
 flu$day <- 1:nrow(flu)
 
 ## extract summaries
-finaltime <- 14
+finaltime <- 15
 finalsize <- 512
 ```
 
@@ -27,11 +27,12 @@ In order to use the any ABC routine, we require a simulation model. Here we will
 ```{r, abcsmc-model}
 ## setup simulation model
 transitions <- c(
-    "S -> beta * S * I / (S + I + R)  -> I", 
-    "I -> gamma * I -> R"
+    "S -> beta * S * I / (S + I + R + R1)  -> I", 
+    "I -> gamma * I -> R",
+    "R -> gamma1 * R -> R1"
 )
-compartments <- c("S", "I", "R")
-pars <- c("beta", "gamma")
+compartments <- c("S", "I", "R", "R1")
+pars <- c("beta", "gamma", "gamma1")
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
@@ -68,23 +69,23 @@ flu <- influenza_england_1978_school
 flu$day <- 1:nrow(flu)
 
 ## create vector of summary statistics
-sumStat <- c(finalsize = 512, finaltime = 14)
+sumStat <- c(finalsize = 512, finaltime = 15)
 sumStat
 ```
 
 ### Prior distributions {#priors}
 
-The second argument to the `ABCSMC()` function must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$ and $\gamma \sim U(0, 5)$. We can specify this as follows:
+The second argument to the `ABCSMC()` function must be a `data.frame` containing information about the prior distributions for the parameters. Here we will let $\beta \sim U(0, 5)$, $\gamma \sim U(0, 5)$ and $\gamma_1 \sim U(0, 5)$. We can specify this as follows:
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, abc-priors}
 ## set priors
-priors <- data.frame(parnames = c("beta", "gamma"), 
-                     dist = rep("unif", 2), 
+priors <- data.frame(parnames = c("beta", "gamma", "gamma1"), 
+                     dist = rep("unif", ), 
                      stringsAsFactors = F)
-priors$p1 <- c(0, 0)
-priors$p2 <- c(5, 5)
+priors$p1 <- c(0, 0, 0)
+priors$p2 <- c(5, 5, 5)
 priors
 ```
 
@@ -128,7 +129,7 @@ simFlu <- function(pars, data, tols, u, model) {
     sims <- model(pars, 0, data[2] + tols[2], u)
     
     ## 'sims' is a vector of outputs of the form:
-    ## completed (1/0), t, S, I, R
+    ## completed (1/0), t, S, I, R, R1
     if(sims[1] == 0) {
         ## if epidemic still going at 
         ## time = finaltime + tol, then reject
@@ -136,7 +137,7 @@ simFlu <- function(pars, data, tols, u, model) {
     } else {
         ## extract finaltime and finalsize
         finaltime <- sims[2]
-        finalsize <- sims[5]
+        finalsize <- sims[6]
     }
     
     ## return vector if match, else return NA
@@ -158,7 +159,7 @@ Next we need to specify the initial states of the system (as a named `vector`):
 
 ```{r, abc-inistates}
 ## define initial states
-iniStates <- c(S = 762, I = 1, R = 0)
+iniStates <- c(S = 762, I = 1, R = 0, R1 = 0)
 ```
 
 ### Tolerances
@@ -290,13 +291,13 @@ summary(post, transfunc = R0gt)
 
 ## Adding additional matching criteria
 
-Matching to final epidemic size and the date of the final removal only is quite crude. We could also incorporate information regarding the observed $I$ curves. One option would be to generate some summary measure of distance between the simulated and observed curves, something like a sum-of-squared differences e.g.
+Matching to final epidemic size and the date of the final removal only is quite crude. We could also incorporate information regarding the observed $R$ curves. One option would be to generate some summary measure of distance between the simulated and observed curves, something like a sum-of-squared differences e.g.
 $$
-    S_I = \sum_{t = 1}^T \left(I_t - I^\prime_t\right)^2,
+    S_R = \sum_{t = 1}^T \left(R_t - R^\prime_t\right)^2,
 $$
-where $I_t$ is the **observed** counts at time $t$, and $I^\prime_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly* then $S_I = 0$; with large values of $S_I$ corresponding to poor matches between the simulated and observed counts.
+where $R_t$ is the **observed** counts at time $t$, and $R^\prime_t$ are the corresponding **simulated** counts at time $t$, and $T$ is the total number of time points. Therefore if the simulated time-series matches the data *exactly* then $S_R = 0$; with large values of $S_R$ corresponding to poor matches between the simulated and observed counts.
 
-To calculate $S_I$, we have to re-compile the model with the `tspan` option turned on.
+To calculate $S_R$, we have to re-compile the model with the `tspan` option turned on.
 
 ```{r, abc-model2}
 ## specify model
@@ -311,19 +312,19 @@ model <- compileRcpp(model)
 model
 ```
 
-You can now see that the new function has an additional `tspan` argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a `tspan` argument to our `simFlu` function. In addition, we will also need to pass the observed time-series counts to this function (which we call `I` here).
+You can now see that the new function has an additional `tspan` argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a `tspan` argument to our `simFlu` function. In addition, we will also need to pass the observed time-series counts to this function (which we call `R` here).
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, abc-func2}
 ## set up function to perform simulation and check matching
-simFlu <- function(pars, data, tols, u, model, tspan, I) {
+simFlu <- function(pars, data, tols, u, model, tspan, R) {
     
     ## run model
     sims <- model(pars, 0, data[2] + tols[2], u, tspan)
     
     ## 'sims' is now a list, with the first element a vector
-    ## of the form: completed (1/0), t, S, I, R
+    ## of the form: completed (1/0), t, S, I, R, R1
     ## and the second element is a matrix containing the 
     ## time-series counts
     simSum <- sims[[1]]
@@ -335,34 +336,34 @@ simFlu <- function(pars, data, tols, u, model, tspan, I) {
     } else {
         ## extract finaltime and finalsize
         finaltime <- simSum[2]
-        finalsize <- simSum[5]
+        finalsize <- simSum[6]
         
         ## calculate sum-of-squared distances of
         ## simulations from observations
-        SI <- sum((I - counts[, 3])^2)
+        SR <- sum((R - counts[, 4])^2)
     }
     
     ## return vector if match, else return NA
-    if(all(abs(c(finalsize, finaltime, SI) - data) <= tols)){
-        return(c(finalsize, finaltime, SI))
+    if(all(abs(c(finalsize, finaltime, SR) - data) <= tols)){
+        return(c(finalsize, finaltime, SR))
     } else {
         return(NA)
     }
 }
 ```
 
-To create some initial tolerances, let's append an initial value for `SI` to our original `tols` object:
+To create some initial tolerances, let's append an initial value for `SR` to our original `tols` object:
 
 ```{r, abc-tols2}
 ## set up new set of tolerances
-tols <- c(tols, SI = 1e6)
+tols <- c(tols, SR = 1e6)
 ```
 
-In practice, we cannot derive a measure of $S_I$ from the **observed** data alone, but we know that if the simulations match the observed data exactly, then $S_I = 0$, so we use this as our target, and append to the `sumStat` vector accordingly:
+In practice, we cannot derive a measure of $S_R$ from the **observed** data alone, but we know that if the simulations match the observed data exactly, then $S_R = 0$, so we use this as our target, and append to the `sumStat` vector accordingly:
 
 ```{r, abc-tols21}
 ## set up data to match to
-sumStat <- c(sumStat, SI = 0)
+sumStat <- c(sumStat, SR = 0)
 ```
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
@@ -381,7 +382,7 @@ post <- ABCSMC(
     ptols = 0.5,
     ngen = 3, 
     parallel = T,
-    model = model, tspan = flu$day, I = flu$in_bed
+    model = model, tspan = flu$day, R = flu$in_bed
 )
 ```
 
@@ -397,81 +398,6 @@ plot(post)
 plot(post, "output")
 ```
 
-Notice that the $S_I$ metrics don't get very close to 0 here. This is because the metric is a **one-sided** metric and so we always expect some variability away from zero. Due to the stochastic nature of the model, to get a metric close to zero we would have to match almost all time points exactly, which would be very computationally expensive. Hence we use this to tweak the outputs, but most of the variability is being constrained by the `finaltime` and `finalsize` metrics here, so getting these small is more important that getting $S_I$ small. Ideally you would want to run for more generations to tighten up each of these outputs.
-
-```{task}
-Add another summary measure corresponding to the sum-of-squared distances between the observed and simulated $R$ curves (assume that the `flu$convalescence` column corresponds to observed $R$ counts). Re-run your ABC-SMC routine. 
-```
-
-```{solution}
-
-``{r, abc-solfunc}
-## set up function to perform simulation and check matching
-simFlu <- function(pars, data, tols, u, model, tspan, I, R) {
-    
-    ## run model
-    sims <- model(pars, 0, data[2] + tols[2], u, tspan)
-    
-    ## 'sims' is now a list, with the first element a vector
-    ## of the form: completed (1/0), t, S, I, R
-    ## and the second element is a matrix containing the 
-    ## time-series counts
-    simSum <- sims[[1]]
-    counts <- sims[[2]]
-    if(simSum[1] == 0) {
-        ## if epidemic still going at 
-        ## time = finaltime + tol, then reject
-        return(NA)
-    } else {
-        ## extract finaltime and finalsize
-        finaltime <- simSum[2]
-        finalsize <- simSum[5]
-        
-        ## calculate sum-of-squared distances of
-        ## simulations from observations
-        SI <- sum((I - counts[, 3])^2)
-        SR <- sum((R - counts[, 4])^2)
-    }
-    
-    ## return vector if match, else return NA
-    if(all(abs(c(finalsize, finaltime, SI, SR) - data) <= tols)){
-        return(c(finalsize, finaltime, SI, SR))
-    } else {
-        return(NA)
-    }
-}
-``
-
-To create a sequence of tolerances:
-
-``{r, abc-soltol}
-## set initial tolerances
-tols <- c(tols, SR = 1e6)
-``
-
-Finally set up the data to match to and run the model:
-
-``{r, abc-solabc}
-## set up data to match to
-sumStat <- c(sumStat, SR = 0)
-
-## run ABC-SMC algorithm
-post <- ABCSMC(
-    x = sumStat, 
-    priors = priors, 
-    func = simFlu, 
-    u = iniStates, 
-    npart = 50,
-    tols = tols,
-    ptols = 0.5,
-    ngen = 3,
-    parallel = T, 
-    model = model, tspan = flu$day, I = flu$in_bed, R = flu$convalescent
-)
-post
-summary(post)
-``
-
-```
+Notice that the $S_R$ metrics don't get very close to 0 here. This is because the metric is a **one-sided** metric and so we always expect some variability away from zero. Due to the stochastic nature of the model, to get a metric close to zero we would have to match almost all time points exactly, which would be very computationally expensive. Hence we use this to tweak the outputs, but most of the variability is being constrained by the `finaltime` and `finalsize` metrics here, so getting these small is more important that getting $S_R$ small. We can see however that the addition of the $S_R$ metric seesm to tighten up the posterior for $\gamma_1$. Why is this do you think? Ideally you would want to run for more generations to tighten up each of these outputs.
 
 > **Remember: here we have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.**
