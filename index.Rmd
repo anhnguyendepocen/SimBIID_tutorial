@@ -1,6 +1,6 @@
 --- 
 title: "Inference in infectious disease systems practicals"
-author: "TJ McKinley"
+author: "[TJ McKinley](mailto:t.mckinley@exeter.ac.uk)"
 site: bookdown::bookdown_site
 output:
     bookdown::pdf_book:

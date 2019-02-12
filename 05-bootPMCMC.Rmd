@@ -77,7 +77,11 @@ obs <- data.frame(
 obs
 ```
 
-A key point is that we do not specify a `tspan` argument. Rather, these will be determined by the `x` argument that we specified in Section \@ref(data). Hence for completeness the simulation model is specified as:
+A key point is that we do not specify a `tspan` argument. Rather, these will be determined by the `x` argument that we specified in Section \@ref(data). 
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+Hence for completeness the simulation model is specified as:
 
 ```{r, boot-model}
 ## set up model
@@ -106,7 +110,7 @@ Now we run the PMCMC algorithm for 5,000 iterations, using 25 particles. We pass
 set.seed(50)
 ```
 
-```{r, boot-priors}
+```{r, boot-priors0}
 ## set priors
 priors <- data.frame(
     parnames = c("beta", "gamma", "gamma1"), 
@@ -117,7 +121,11 @@ priors$p2 <- c(5, 5, 5)
 
 ## define initial states
 iniStates <- c(S = 762, I = 1, R = 0, R1 = 0)
+```
 
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+```{r, boot-priors}
 ## run PMCMC algorithm
 post <- PMCMC(
     x = flu_dat, 
