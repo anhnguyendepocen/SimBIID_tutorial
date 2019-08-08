@@ -12,3 +12,10 @@ installSimBIID.R
 
 # ignore testTrace plot
 testTrace.pdf
+
+# ignore final PDF
+StatModellingPracticals.pdf
+
+# ignore zips
+*.zip
+
