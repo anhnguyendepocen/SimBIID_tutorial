@@ -68,7 +68,7 @@ sims <- run(
 sims
 ```
 
-Currently this outputs a `vector` with entries of the form: `completed / t / u*`, where `completed` is a binary variable containing the value `1` if the epidemic finished before time point `tstop`, and `0` otherwise. Then the value `t` is the time point when the epidemic finished (or `tstop` if the epidemic was still ongoing when the function exited), and I'm using `u*` generically to correspond to a copy of the states of the system at the final time point (here $S$, $I$, $R$ and $R_1$).
+Currently this outputs a `tibble` object (essentially a `data.frame`), with columns: `completed / t / u*`, where `completed` is a binary variable containing the value `1` if the epidemic finished before time point `tstop`, and `0` otherwise. Then the value `t` is the time point when the epidemic finished (or `tstop` if the epidemic was still ongoing when the function exited), and I'm using `u*` generically to correspond to a copy of the states of the system at the final time point (here $S$, $I$, $R$ and $R_1$).
 
 Here we can see that the simulation finished at time point `t = `r round(sims$sums[3], 2)``, with the final state of the system given by ``r paste0("c(S = ", sims$sums[4], ", I = ", sims$sums[5], ", R = ", sims$sums[6], ", R1 = ", sims$sums[7], ")")``.
 
