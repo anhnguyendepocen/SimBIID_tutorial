@@ -2,7 +2,7 @@
 library(knitr)
 
 ## set knitr options
-opts_chunk$set(cache = T, tidy.opts = list(width.cutoff = 55), tidy = F, fig.align = "center", fig.width = 4.3, fig.height = 4.3, multCode = F)
+opts_chunk$set(cache = T, tidy.opts = list(width.cutoff = 55), tidy = F, fig.align = "center", fig.width = ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", 4.3, 5), fig.height = fig.width, multCode = F)
 
 ## variables to help save latex answers for appendix
 taskCtr <- 0
