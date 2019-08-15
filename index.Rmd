@@ -26,7 +26,13 @@ description: "Inference in infectious disease systems practicals"
 ```{r, setup, child = "_setup.Rmd", include = F, purl = F, cache = F}
 ```
 
-The purpose of this document is to run some ABC-SMC routines using the (current) `SimBIID` package (Simulation-Based Inference for Infectious Disease models), which is a package designed mostly for teaching purposes, to illustrate some of the ideas and routines discussed in the lectures. I am heavily indebted to [Stefan Widgren](http://www.it.uu.se/katalog/stewi333) for his fantastic [SimInf](https://cran.r-project.org/web/packages/SimInf/index.html) package, and indeed (with permission) I shamelessly borrow some of his ideas (such as the `mparse()` function).
+The purpose of this document is to run some ABC-SMC routines using the (current) [`SimBIID`](https://github.com/tjmckinley/SimBIID) package (Simulation-Based Inference for Infectious Disease models), which is a package designed mostly for teaching purposes, to illustrate some of the ideas and routines discussed in the lectures.
+
+```{r, echo = F, eval = opts_knit$get("rmarkdown.pandoc.to") != "latex", results = "asis"}
+cat("> **Please note that there is a PDF version of these notes available by clicking on the icon in the top-left corner of the page.**")
+```
+
+I am heavily indebted to [Stefan Widgren](http://www.it.uu.se/katalog/stewi333) for his fantastic [SimInf](https://cran.r-project.org/web/packages/SimInf/index.html) package, and indeed (with permission) I shamelessly borrow some of his ideas (such as the `mparse()` function).
 
 In the longer term, it would be good to have a fully `SimInf` supported version of this package, but for the time being I have developed `SimBIID` mostly as a tool to help you learn how ABC-SMC (and other routines) work, and to allow you to get your hands dirty with some real models/data, but without the complexities of having to code these routines up yourselves.
 
