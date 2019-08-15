@@ -24,6 +24,8 @@ flu <- influenza_england_1978_school
 flu$day <- 1:nrow(flu)
 ```
 
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
 ```{r, plot-BS, message = F, warning = F, fig.height = 3.5, fig.width = 3.5}
 ## plot data
 plot(flu$day, flu$in_bed, xlab = "Day", ylab = "Number in bed-rest", type = "l")
@@ -31,10 +33,10 @@ plot(flu$day, flu$in_bed, xlab = "Day", ylab = "Number in bed-rest", type = "l")
 
 ## Set up simulation model
 
-To set up the model above we need a character vector of transition rates, as per `mparse()`:
+To set up the model above we need a character vector of transition rates:
 
 ```{r, sim-trans}
-## test compilation model
+## set up transition rates
 transitions <- c(
     "S -> beta * S * I / (S + I + R + R1) -> I", 
     "I -> gamma * I -> R",
@@ -42,9 +44,10 @@ transitions <- c(
 )
 ```
 
-We also need a vector of compartment names and parameter names (note that we do not set values for the parameters here---instead we pass these and the initial states into later functions):
+We also need a vector of compartment names and parameter names:
 
 ```{r, sim-comp}
+## set compartment and parameter names
 compartments <- c("S", "I", "R", "R1")
 pars <- c("beta", "gamma", "gamma1")
 ```
@@ -52,12 +55,20 @@ pars <- c("beta", "gamma", "gamma1")
 We then build a model using the `mparseRcpp()`:
 
 ```{r, sim-model}
+## parse model
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
     pars = pars
 )
 ```
+
+> If you wish to, you can view the parsed `Rcpp` source code by simply printing the object e.g.
+> ```
+> model
+> ```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 The `SimBIID` package provides a `run()` method to run individual or multiple simulations from the model. By default the `mparseRcpp` creates a function that takes four arguments:
 
@@ -67,8 +78,6 @@ The `SimBIID` package provides a `run()` method to run individual or multiple si
 * `u`: states of the system at `tstart`.
 
 We can then pass this object to the `run()` method, along with the corresponding arguments e.g.
-
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, sim-seed, include = F}
 set.seed(1)
@@ -101,7 +110,7 @@ Here we can see that the simulation finished at time point `t = `r round(sims$su
 Alternatively, we may want to return the states of the system at a series of pre-determined points. We can do this by adding a `tspan` argument, which is a vector of time points at which we wish to return the states. We initialise the model by telling `mparseRcpp` that we wish to include a `tspan` argument e.g.
 
 ```{r, sim-mod1}
-## generate model
+## parse model
 model <- mparseRcpp(
     transitions = transitions, 
     compartments = compartments,
@@ -112,13 +121,12 @@ model <- mparseRcpp(
 
 When we `run()` the model, we can enter a suitable `tspan` argument as a vector of time points at which we wish to return the states e.g.
 
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
-
 ```{r, sim-seed1, include = F}
 set.seed(10)
 ```
 
 ```{r, sim-run1}
+## run model
 sims <- run(
     model = model,
     pars = simPars,
@@ -138,7 +146,7 @@ Here we can see that the epidemic `r ifelse(sims$sums[2] == 1, "died out", "was 
 
 The `run()` method outputs a `SimBIID_runs` object, which can be plotted using the `plot()` function:
 
-```{r, sim-plot, fig.width = 4, fig.height = 3}
+```{r, sim-plot, out.width = "80%"}
 ## plot simulation
 plot(sims)
 ```
@@ -148,6 +156,7 @@ plot(sims)
 We can run multiple simulations by passing a `nrep` argument to `run()`. For example, to run 100 replicates and plot them:
 
 ```{r, sim-run2}
+## run model
 sims <- run(
     model = model,
     pars = simPars,
@@ -161,16 +170,16 @@ sims <- run(
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
-```{r, sim-run21, fig.width = 4, fig.height = 3}
+```{r, sim-run21, out.width = "80%"}
 sims
+## plot simulations
 plot(sims, quant = c(0.6, 0.7, 0.8, 0.9))
 ```
 
 Here the ribbons correspond to different prediction bands, and the red line is the posterior median. We can also add individual trajectories by inputing their replicate number, for example below we add the trajectories for replicates 1 and 2 to the plot.
 
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
-
-```{r, sim-plot1, fig.width = 4, fig.height = 3}
+```{r, sim-plot1, out.width = "80%"}
+## plot simulations
 plot(sims, rep = c(1, 2), quant = c(0.6, 0.7, 0.8, 0.9))
 ```
 
