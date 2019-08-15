@@ -1,3 +1,9 @@
+@import url("https://code.cdn.mozilla.net/fonts/fira.css");
+.book.font-family-0 {font-family: Fira Sans, serif;}
+.book.font-family-1 {font-family: Fira Sans, sans-serif;}
+
+.book .book-summary{left:-430px;width:430px;}.book .book-body .page-wrapper .page-inner{max-width:670px;}@media (min-width: 600px) {.book.with-summary .book-header.fixed {left: 430px;}.book.with-summary .book-body{left:430px}}@media (max-width: 600px) {.book.with-summary .book-header.fixed {min-width: 430px;}.book.with-summary .book-body {min-width: 430px;}}
+
 button {
     background-color: #808080;
     border: none;
