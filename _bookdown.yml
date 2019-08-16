@@ -1,4 +1,4 @@
 rmd_files:
-    html: ['index.Rmd', '01-simulation.Rmd', '02-ABCSMC.Rmd', '03-smallpox.Rmd', '04-bootPMCMC.Rmd', '05-epilogue.Rmd']
-    latex: ['index.Rmd', '01-simulation.Rmd', '02-ABCSMC.Rmd', '03-smallpox.Rmd', '04-bootPMCMC.Rmd', '05-epilogue.Rmd', '06-appendix.Rmd']
+    html: ['index.Rmd', '01-simulation.Rmd', '02-ABCSMC.Rmd', '03-smallpox.Rmd', '04-bootPMCMC.Rmd', '05-epilogue.Rmd', '06-appendix_HTML.Rmd']
+    latex: ['index.Rmd', '01-simulation.Rmd', '02-ABCSMC.Rmd', '03-smallpox.Rmd', '04-bootPMCMC.Rmd', '05-epilogue.Rmd', '06-appendix_PDF.Rmd']
 output_dir: "docs"
