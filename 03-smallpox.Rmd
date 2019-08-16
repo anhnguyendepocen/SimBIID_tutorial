@@ -9,14 +9,13 @@ Firstly, load the `SimBIID` library:
 library(SimBIID)
 ```
 
-Then load in the data:
+Note that the data, originally from [@thompson_foege:1968], can be found in the `outbreaks` package, albeit in a slightly different form. We use the simpler data in [@oneill_roberts:1999], which correspond to the inter-removal times for 30 individuals, where the times have been relabelled such that time 0 is the time of the first removal. For convenience these data have been collapsed to time-series counts and included in the `SimBIID` package:
 
 ```{r, smallpox-data}
-## read in the data and convert to vector
-smallpox <- as.numeric(unlist(read.csv("smallpox.csv", header = F)))
+## read in the data 
+data(smallpox)
 summary(smallpox)
 ```
-Note that these data, originally from [@thompson_foege:1968], can be found in the `outbreaks` package, albeit in a slightly different form. We use the simpler data in [@oneill_roberts:1999], which correspond to the inter-removal times for `r length(smallpox)` individuals, where the times have been relabelled such that time 0 is the time of the first removal.
 
 ## SIR model
 
@@ -33,7 +32,7 @@ In the first instance, as before, let's match to:
 * final epidemic size (i.e. total number of removals across the time course of the epidemic), and
 * time of final removal (in this case when the epidemic process ceased).
 
-Although simple, these two measures serve to give us some information on both the *length* and *magnitude* of the epidemic, and should contain useful information about the parameters. In this case the final removal time is `r max(smallpox)` days and the final epidemic size is `r length(smallpox)` individuals.
+Although simple, these two measures serve to give us some information on both the *length* and *magnitude* of the epidemic, and should contain useful information about the parameters. In this case the final removal time is `r max(smallpox$time)` days and the final epidemic size is `r sum(smallpox$removals)` individuals.
 
 ## Simulation model
 
@@ -46,12 +45,12 @@ Copy-and-paste the function below. Go through this function and understand what 
 ```{r, smallpox-setup}
 ## reset times so that initial infection occurs
 ## 10 days before first removal
-smallpox <- smallpox + 10
+smallpox$time <- smallpox$time + 10
 
 ## define the targeted summary statistics
-data <- c(
-    finalsize = length(smallpox), 
-    finaltime = max(smallpox)
+sumStat <- c(
+    finalsize = sum(smallpox$removals), 
+    finaltime = max(smallpox$time)
 )
 
 ## set initial states (1 initial infection in population of 120)
@@ -85,7 +84,7 @@ model
 ```
 
 ```{task}
-Write a function called `simSIR` that is used to simulate an outbreak and extract the relevant summary statistics from the model runs. the function needs to take at least the arguments: `pars`, `data`, `tols`, `u`, and return an `NA` if no match, or a vector of summary statistics if there is a match.
+Write a function called `simSIR()` that is used to simulate an outbreak and extract the relevant summary statistics from the model runs. the function needs to take at least the arguments: `pars`, `data`, `tols`, `u`, and return an `NA` if no match, or a vector of summary statistics if there is a match.
 ```
 
 ```{solution}
@@ -153,7 +152,7 @@ tols <- c(
 
 ## run ABC-SMC algorithm
 post <- ABCSMC(
-    x = data, 
+    x = sumStat, 
     priors = priors, 
     func = simSIR, 
     u = iniStates, 
@@ -169,7 +168,7 @@ post <- ABCSMC(
 ```
 
 ```{task}
-Plot the approximate posteriors and simulated outcomes. Produce posterior mean and SD estimates for the parameters.
+Plot the approximate posteriors and simulated outcomes. Produce posterior mean and standard deviation estimates for the parameters.
 ```
 
 ```{solution}
