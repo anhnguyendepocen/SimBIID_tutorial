@@ -6,19 +6,21 @@ Here we will return to the influenza in a boarding school example. Please note t
 
 Here we use a simpler model but use a full Bayesian approach using a particle Markov chain Monte Carlo (PMCMC) routine [@andrieuetal:2010] with a bootstrap particle filter to estimate the likelihood [@gordonetal:1993], as described in the lectures. 
 
-Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C. We could use `pomp` to fit this model using the same PMCMC routine described here, but the syntax is different to the style we are used to using `SimInf`. So instead the `SimBIID` package provides a function `PMCMC()` that runs this algorithm, and if you pass a `SimBIID_model` object to this function, it will automatically compile in the correct manner.
+Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C/C++. We could use `pomp` to fit this model using the same PMCMC routine described here, but the syntax is different to the `SimInf` style. So instead the `SimBIID` package provides a function `PMCMC()` that runs this algorithm, and if you pass a `SimBIID_model` object to this function, it will automatically compile in the correct manner.
 
 As before, we load the data and the `SimBIID` package:
 
 ```{r, boot-simbiid, warning = F, message = F}
-## load data
+## load libraries
 library(outbreaks)
+library(SimBIID)
+
+## set up data
 flu <- influenza_england_1978_school
 flu$day <- 1:nrow(flu)
-
-## load library
-library(SimBIID)
 ```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ## Arguments for `PMCMC()` function
 
@@ -51,15 +53,17 @@ When we specify our simulation model using `mparseRcpp()`, we also need to speci
 * `p1` is the first parameter (the lower bound in the case of `"unif"`, the rate in the case of `"pois"`, or the size in the case of `"binom"`); 
 * `p2` is the second parameter (the upper bound in the case of `"unif"`, `NA` in the case of `"pois"`, and `prob` in the case of `"binom"`).
 
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
 Here we will place a Poisson observation process around the $R$ curve, such that:
 $$
     R_t \sim \mbox{Po}(R^\prime_t + 10^{-6}),
 $$
 where $R_t$ is the **observed** $R$ count at time $t$, $R^\prime_t$ is the simulated count. We add a small constant ($10^{-6}$ here) following the suggestion [here](https://kingaa.github.io/sbied/mif/mif.html#applying-if2-to-the-boarding-school-influenza-outbreak). This is important to prevent numerical errors, since the simulated counts $R^\prime_t$ could be zero, which would result in the Poisson rate parameter being zero, which violates the conditions of the Poisson distribution, and would thus produce non-finite likelihood estimates. The addition of a small constant prevents this from happening.
 
-The idea of putting some form of Poisson noise on time-series counts has been used various times in the literature [e.g. @funketal:2016]. Often the observation term is placed on the *incidence* curves (i.e. new infections / removals). The variance of the Poisson distribution is equal to the mean (so a mean of $R^\prime_t$ has a variance of $R^\prime_t$ also), and since incidence curves tend to be smaller in magnitude than the counts in each class, then this can result in a tighter match between the simulations and the data. It is often usual that the mean of the Poisson noise is also scaled by some parameter corresponding to an *under-reporting* rate, meaning that the model assumes that the average observed counts are less than the true values.
+The idea of putting some form of Poisson noise on the parameters of time-series count models has been used various times in the literature [e.g. @funketal:2016]. Often the observation term is placed on the *incidence* curves (i.e. new infections / removals). The variance of the Poisson distribution is equal to the mean (so a mean of $R^\prime_t$ has a variance of $R^\prime_t$ also), and since incidence curves tend to be smaller in magnitude than the counts in each class, then this can result in a tighter match between the simulations and the data. It is often usual that the mean of the Poisson noise is also scaled by some parameter corresponding to an *under-reporting* rate, meaning that the model assumes that the average observed counts are less than the true values.
 
-In this example, we do not have *incidence* curves, so instead place a Poisson error around the $R^\prime_t$ counts instead. Note here that there is no strong epidemiological reason for the Poisson term in this case. We can assume that in a closed boarding school population, it would be unlikely that too many ill boys would be missed, and hence the observed counts are likely to be close to the true counts, and thus the amount of variation added by the Poisson noise term here is likely to be larger than we might ideally think is present in the data. In essence the Poisson term is providing an **approximation**, allowing simulations to have a non-negligible weight even if they do not match the observed curves exactly. In essence the introduction of this term in this instance is introducing some approximation into the process, but in doing so is allowing us to fit a model in a computationally feasible way. In practice I would want to use a distribution with lower variances however.
+In this example, we do not have *incidence* curves, so instead place a Poisson error around the $R^\prime_t$ counts instead. Note here that there is no strong epidemiological reason for the Poisson term in this case. We can assume that in a closed boarding school population, it would be unlikely that too many ill boys would be missed, and hence the observed counts are likely to be close to the true counts, and thus the amount of variation added by the Poisson noise term here is likely to be larger than we might ideally think is present in the data. In essence the Poisson term is providing an **approximation**, allowing simulations to have a non-negligible weight even if they do not match the observed curves exactly. As such the introduction of this term in this instance is introducing some approximation into the process, but in doing so is allowing us to fit a model in a computationally feasible way. In practice I would want to use a distribution with lower variances however.
 
 To this end, other options might include putting a Gaussian error around the observed counts, where the variance could be made smaller than the mean (e.g. $R_t \sim N(R^\prime_t, \alpha R^\prime_t + 1)$ for $\alpha \in (0, 1)$). This would penalise simulations that lie further away from the observed data more than the Poisson model we are using, at the cost of requiring a larger number of particles / a longer run time to evaluate. (Bear in mind also that the Gaussian models *continuous* random variables, and is unbounded. Hence if you simulate from this observation process then you could get simulated counts that are both non-integer and negative-valued. This type of approximation might help model fitting, but is a good example of where the the biological interpretation of the noise process is not always realistic, but might be "good enough".) 
 
@@ -81,7 +85,7 @@ A key point is that we do not specify a `tspan` argument. Rather, these will be 
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
-Hence for completeness the simulation model is specified as:
+For completeness, we can remind ourselves that the simulation model is specified as:
 
 ```{r, boot-model}
 ## set up model
@@ -107,7 +111,7 @@ model <- mparseRcpp(
 Now we run the PMCMC algorithm for 5,000 iterations, using 25 particles. We pass the same initial states and priors as in the ABC-SMC practical. We print summaries to the screen every 1,000 iterations (`nprintsum = 1000`):
 
 ```{r, boot-setseed, include = F}
-set.seed(50)
+set.seed(55)
 ```
 
 ```{r, boot-priors0}
@@ -140,7 +144,7 @@ post <- PMCMC(
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
-```{r, boot-trace, fig.width = 5, fig.height = 5}
+```{r, boot-trace}
 ## plot MCMC traces
 plot(post, "trace")
 ```
@@ -153,9 +157,7 @@ post <- PMCMC(post, niter = 5000, nprintsum = 1000)
 
 (I've suppressed the output for brevity here...)
 
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
-
-```{r, boot-extrun-plot, fig.width = 5, fig.height = 5}
+```{r, boot-extrun-plot}
 plot(post, "trace")
 ```
 
@@ -164,8 +166,6 @@ plot(post, "trace")
 The mixing of the chain and the speed of convergence is related to the number of particles (amongst other things). There is no strong consensus, but a rule-of-thumb is to try to choose the number of particles such that the variance of the log-likelihood estimate at a suitable set of parameters $\theta^\prime$ is between 1--3. Clearly the larger the number of particles, the higher the computational burden, so in practice the additional computational burden of the simulations must be balanced against the improved mixing and faster convergence. This is tricky, so instead here we take a simpler approach.
 
 Firstly we run the chain for a fixed number of particles until it looks like the chain has converged. Then we choose a set of parameter values $\theta^\prime$ chosen to be the posterior medians. We then generate 500 estimates of the log-likelihood for a range of different numbers of particles, from which we can calculate the variance of these estimates. We then choose the smallest number of particles with a variance of the log-likelihood of less than 3.
-
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 Hence, from the training runs above we can remove some burn-in iterations, and extract the posterior medians:
 
@@ -200,7 +200,9 @@ flu_train <- var(flu_train$output)
 flu_train
 ```
 
-Here the variance is `r round(flu_train, 2)`, which is larger than 3. Hence let's try increasing the number of particles and repeating these steps.
+Here the variance is `r round(flu_train, 0)`, which is larger than 3. Hence let's try increasing the number of particles and repeating these steps.
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, boot-train1, results = "hide"}
 ## generate numbers of particles to trial
@@ -228,7 +230,7 @@ flu_train <- do.call("c", flu_train)
 flu_train
 ```
 
-Here we will choose the number of particles to be 75. We now start a new chain using 75 particles, and with starting values derived from the training runs.
+Here we will choose the number of particles to be 75 (ideally should be a bit larger---but for the sake of exposition we'll tone down a touch). We now start a new chain using 75 particles, and with starting values derived from the training runs.
 
 ```{r, boot-fullrun, results = "hide"}
 post <- PMCMC(
@@ -245,7 +247,9 @@ post <- PMCMC(
 
 (Again I have suppressed the output here for brevity...)
 
-```{r, boot-fullsum, fig.width = 5, fig.height = 5}
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+```{r, boot-fullsum}
 ## plot and summarise MCMC output
 plot(post, "trace")
 ```
@@ -255,12 +259,14 @@ plot(post, "trace")
 We can visualise the approximate posterior distributions (after removing some burn-in):
 
 
-```{r, boot-fullsum1, fig.width = 8, fig.height = 4}
+```{r, boot-fullsum1}
 ## remove burn-in
 post <- window(post, start = 2000)
 ## plot and summarise outputs
 plot(post)
 ```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
 
 ```{r, boot-fullsum2}
 summary(post)
@@ -300,6 +306,8 @@ The important point to note is that in the ABC approaches there is some loss-of-
 Therefore one has to be careful when defining the model. In some cases adding some stochastic noise to the observations can make the system easier to fit, but unless the noise has some real-world interpretation, either as observation error, measurement error or model discrepancy, then in essence this additional noise is essentially another way of doing approximate Bayesian computation!
 ```
 
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
 ## Predictive posterior distributions
 
 We can also use the model to predict the future course of an outbreak (with uncertainties). The `SimBIID` packages provides a `predict()` method for `PMCMC` objects. To produce predictions we first fit a model to the current available data. This produces a set of posterior samples for each of the parameters. Then, for each set of posterior samples we can produce an estimate of the states of the system at the final observed time point. We do this by running a bootstrap particle filter over the observed time points for each parameter set, and then sampling a trajectory from the weighted set of particles. Hence we also obtain a set of posterior samples for the states of the system at the final observed time point. 
@@ -331,7 +339,17 @@ plot(post, "trace")
 
 Now let's predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples. These can be obtained by using the `window()` function, to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by sub-sampling every 8^th^ sample. The `predict()` function produces a `SimBIID_runs` object, which we can plot as before. Since `obsProcess` was specified in the model, the `predict()` function will also produce predictions that take the **observation** process into account. Here the observation process acts only on the $R$ class, and so this will produce an extra column called `Iobs` here, which contains predictions assuming a Poisson observation error around the simulated `R` counts (called `Robs` here which is specified in the `datNames` column of the original `obsProcess` object).
 
-```{r, boot-pred1}
+```{r, boot-pred01, eval = F}
+## run predictions forward in time
+post_pred <- predict(window(post, start = 2000, thin = 8), tspan = 4:14)
+
+## plot predictions
+plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9))
+```
+
+`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
+
+```{r, boot-pred1, echo = F, warning = F, message = F}
 ## run predictions forward in time
 post_pred <- predict(window(post, start = 2000, thin = 8), tspan = 4:14)
 
@@ -343,9 +361,7 @@ The uncertainties up to the blue dashed line are derived from the bootstrap part
 
 > The `matchData = c("Robs = R")` below tells the `plot()` function to match the column called `Robs` in the data set to the `R` class from the simulations. It might be worth plotting the observations against the `Robs` output from the simulations also, since the simulated `Robs` curves include the **observation process**.
 
-`r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
-
-```{r, boot-pred3, fig.height = 4, fig.width = 4}
+```{r, boot-pred3}
 ## plot predictions and add observed I curve
 plot(post_pred, quant = c(0.6, 0.7, 0.8, 0.9), 
      data = flu_dat, matchData = c("Robs = R", "Robs = Robs"))
@@ -416,7 +432,3 @@ post_plot[[3]] + ggplot2::ggtitle("Predictions at day 11")
 We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, as long as we take account for the observation process. Here the observation process acts mostly as a means of modelling **underreporting**, and hence the **observed** counts tend to be less than the **simulated** counts (shown here by adding the observed data line to both the `R` and `Robs` plots). We can also see that the uncertainties in the forecasts get smaller the more data we fit to and also as the epidemic begins to die out.
 
 ```
-
-
-
-
