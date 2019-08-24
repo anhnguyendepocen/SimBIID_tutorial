@@ -317,7 +317,7 @@ Once these have been obtained, we can use the corresponding posterior samples to
 As an example, let's pretend that we are at day 3 of the outbreak, and let's fit a model to the observed data up to that time point:
 
 ```{r, boot-pred-setseed, include = F}
-set.seed(1)
+set.seed(10)
 ```
 
 ```{r, boot-pred, results = "hide", fig.show = "hide"}
@@ -372,6 +372,7 @@ Repeat the above procedure, refitting at days 5, 8 and 11. What happens to the u
 ```
 
 ```{solution}
+Note that I've suppressed the fitting and plotting code for brevity.
 
 ``{r, boot-solpred, include = F}
 post_pred <- list()
@@ -398,9 +399,9 @@ for(i in 1:length(pred_days)) {
         niter = 10000, 
         nprintsum = 1000
     )
+    
     ## plot traces
     plot(post, "trace")
-    
     
     ## run predictions forward in time
     post_pred[[i]] <- predict(window(post, start = 2000, thin = 8), tspan = (pred_days[i] + 1):14)
@@ -408,7 +409,7 @@ for(i in 1:length(pred_days)) {
 dev.off()
 ``
 
-``{r, boot-solplotpred}
+``{r, boot-solplotpred, echo = F}
 post_plot <- list()
 for(i in 1:length(post_pred)){
     ## plot predictions
