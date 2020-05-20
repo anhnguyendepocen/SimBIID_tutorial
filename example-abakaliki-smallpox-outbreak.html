@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>4 Example: Abakaliki smallpox outbreak | Inference in infectious disease systems practicals</title>
+  <meta name="description" content="4 Example: Abakaliki smallpox outbreak | Inference in infectious disease systems practicals" />
+  <meta name="generator" content="bookdown 0.19 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="4 Example: Abakaliki smallpox outbreak | Inference in infectious disease systems practicals" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="4 Example: Abakaliki smallpox outbreak | Inference in infectious disease systems practicals" />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="4 Example: Abakaliki smallpox outbreak | Inference in infectious disease systems practicals" />
+  
+  <meta name="twitter:description" content="4 Example: Abakaliki smallpox outbreak | Inference in infectious disease systems practicals" />
+  
+
+<meta name="author" content="TJ McKinley" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="approximate-bayesian-computation.html"/>
+<link rel="next" href="particle-mcmc.html"/>
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<script language="javascript"> 
+    function toggle(id) {
+        var ele = document.getElementById("toggleText" + id);
+        var text = document.getElementById("displayText" + id);
+        var buttonText = text.innerHTML.replace("Show ", "");
+        buttonText = buttonText.replace("Hide ", "");
+        if(ele.style.display == "block") {
+            ele.style.display = "none";
+            text.innerHTML = "Show " + buttonText;
+        } else {
+            ele.style.display = "block";
+            text.innerHTML = "Hide " + buttonText;
+        }
+    } 
+</script>
+
+<script language="javascript">
+    function openCode(evt, codeName, id) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent" + id);
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks" + id);
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(codeName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+</script>
+
+<script language="javascript">
+    function hide(id){
+        document.getElementById(id).style.display = "none";
+    }
+</script>
+</script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a><ul>
+<li class="chapter" data-level="1.1" data-path="index.html"><a href="index.html#installation"><i class="fa fa-check"></i><b>1.1</b> Installation</a><ul>
+<li class="chapter" data-level="1.1.1" data-path="index.html"><a href="index.html#windows"><i class="fa fa-check"></i><b>1.1.1</b> Windows</a></li>
+<li class="chapter" data-level="1.1.2" data-path="index.html"><a href="index.html#mac"><i class="fa fa-check"></i><b>1.1.2</b> Mac</a></li>
+<li class="chapter" data-level="1.1.3" data-path="index.html"><a href="index.html#linux"><i class="fa fa-check"></i><b>1.1.3</b> Linux</a></li>
+<li class="chapter" data-level="1.1.4" data-path="index.html"><a href="index.html#install-package"><i class="fa fa-check"></i><b>1.1.4</b> Install package</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html"><i class="fa fa-check"></i><b>2</b> Set up simple simulation model</a><ul>
+<li class="chapter" data-level="2.1" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#case-study"><i class="fa fa-check"></i><b>2.1</b> Case Study</a></li>
+<li class="chapter" data-level="2.2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#set-up-simulation-model"><i class="fa fa-check"></i><b>2.2</b> Set up simulation model</a></li>
+<li class="chapter" data-level="2.3" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#using-tspan"><i class="fa fa-check"></i><b>2.3</b> Using <code>tspan</code></a></li>
+<li class="chapter" data-level="2.4" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#plotting-simulations"><i class="fa fa-check"></i><b>2.4</b> Plotting simulations</a></li>
+<li class="chapter" data-level="2.5" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#running-multiple-simulations"><i class="fa fa-check"></i><b>2.5</b> Running multiple simulations</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html"><i class="fa fa-check"></i><b>3</b> Approximate Bayesian Computation</a><ul>
+<li class="chapter" data-level="3.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-model"><i class="fa fa-check"></i><b>3.1</b> Simulation model</a></li>
+<li class="chapter" data-level="3.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#arguments-to-abcsmc-function"><i class="fa fa-check"></i><b>3.2</b> Arguments to <code>ABCSMC()</code> function</a><ul>
+<li class="chapter" data-level="3.2.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#summary-statistics"><i class="fa fa-check"></i><b>3.2.1</b> Summary statistics</a></li>
+<li class="chapter" data-level="3.2.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#priors"><i class="fa fa-check"></i><b>3.2.2</b> Prior distributions</a></li>
+<li class="chapter" data-level="3.2.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-function"><i class="fa fa-check"></i><b>3.2.3</b> Simulation function</a></li>
+<li class="chapter" data-level="3.2.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#inistates"><i class="fa fa-check"></i><b>3.2.4</b> Initial states</a></li>
+<li class="chapter" data-level="3.2.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#tolerances"><i class="fa fa-check"></i><b>3.2.5</b> Tolerances</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#running-abcsmc"><i class="fa fa-check"></i><b>3.3</b> Running <code>ABCSMC()</code></a></li>
+<li class="chapter" data-level="3.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#calculate-posterior-for-transformations-of-parameters"><i class="fa fa-check"></i><b>3.4</b> Calculate posterior for transformations of parameters</a></li>
+<li class="chapter" data-level="3.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#adding-additional-matching-criteria"><i class="fa fa-check"></i><b>3.5</b> Adding additional matching criteria</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html"><i class="fa fa-check"></i><b>4</b> Example: Abakaliki smallpox outbreak</a><ul>
+<li class="chapter" data-level="4.1" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#sir-model"><i class="fa fa-check"></i><b>4.1</b> SIR model</a></li>
+<li class="chapter" data-level="4.2" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#summary-statistics-1"><i class="fa fa-check"></i><b>4.2</b> Summary statistics</a></li>
+<li class="chapter" data-level="4.3" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#simulation-model-1"><i class="fa fa-check"></i><b>4.3</b> Simulation model</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="particle-mcmc.html"><a href="particle-mcmc.html"><i class="fa fa-check"></i><b>5</b> Particle MCMC</a><ul>
+<li class="chapter" data-level="5.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#arguments-for-pmcmc-function"><i class="fa fa-check"></i><b>5.1</b> Arguments for <code>PMCMC()</code> function</a><ul>
+<li class="chapter" data-level="5.1.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#data"><i class="fa fa-check"></i><b>5.1.1</b> Data</a></li>
+<li class="chapter" data-level="5.1.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#obsprocess"><i class="fa fa-check"></i><b>5.1.2</b> Observation process</a></li>
+</ul></li>
+<li class="chapter" data-level="5.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#running-the-pmcmc-algorithm"><i class="fa fa-check"></i><b>5.2</b> Running the PMCMC algorithm</a></li>
+<li class="chapter" data-level="5.3" data-path="particle-mcmc.html"><a href="particle-mcmc.html#optimising-the-number-of-particles"><i class="fa fa-check"></i><b>5.3</b> Optimising the number of particles</a></li>
+<li class="chapter" data-level="5.4" data-path="particle-mcmc.html"><a href="particle-mcmc.html#visualising-and-summarising-the-posterior-distributions"><i class="fa fa-check"></i><b>5.4</b> Visualising and summarising the posterior distributions</a></li>
+<li class="chapter" data-level="5.5" data-path="particle-mcmc.html"><a href="particle-mcmc.html#predictive-posterior-distributions"><i class="fa fa-check"></i><b>5.5</b> Predictive posterior distributions</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="epilogue.html"><a href="epilogue.html"><i class="fa fa-check"></i><b>6</b> Epilogue</a></li>
+<li class="chapter" data-level="7" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i><b>7</b> References</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Inference in infectious disease systems practicals</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="example-abakaliki-smallpox-outbreak" class="section level1">
+<h1><span class="header-section-number">4</span> Example: Abakaliki smallpox outbreak</h1>
+<p>Here we will explore fitting a simple <span class="math inline">\(SIR\)</span> model to the famous Abakaliki smallpox data <span class="citation">(see e.g. O’Neill and Roberts <a href="#ref-oneill_roberts:1999">1999</a>)</span>. This chapter is mainly for you to have a go at!</p>
+<p>Firstly, load the <code>SimBIID</code> library:</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb73-1" data-line-number="1"><span class="co">## load library</span></a>
+<a class="sourceLine" id="cb73-2" data-line-number="2"><span class="kw">library</span>(SimBIID)</a></code></pre></div>
+<p>Note that the data, originally from <span class="citation">(Thompson and Foege <a href="#ref-thompson_foege:1968">1968</a>)</span>, can be found in the <code>outbreaks</code> package, albeit in a slightly different form. We use the simpler data in <span class="citation">(O’Neill and Roberts <a href="#ref-oneill_roberts:1999">1999</a>)</span>, which correspond to the inter-removal times for 30 individuals, where the times have been relabelled such that time 0 is the time of the first removal. For convenience these data have been collapsed to time-series counts and included in the <code>SimBIID</code> package:</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb74-1" data-line-number="1"><span class="co">## read in the data </span></a>
+<a class="sourceLine" id="cb74-2" data-line-number="2"><span class="kw">data</span>(smallpox)</a>
+<a class="sourceLine" id="cb74-3" data-line-number="3"><span class="kw">summary</span>(smallpox)</a></code></pre></div>
+<pre><code>##       time          removals    
+##  Min.   : 0.00   Min.   :1.000  
+##  1st Qu.:28.00   1st Qu.:1.000  
+##  Median :47.00   Median :1.000  
+##  Mean   :43.43   Mean   :1.304  
+##  3rd Qu.:57.50   3rd Qu.:1.500  
+##  Max.   :76.00   Max.   :3.000</code></pre>
+<div id="sir-model" class="section level2">
+<h2><span class="header-section-number">4.1</span> SIR model</h2>
+<p>Recall, for a continuous-time <span class="math inline">\(SIR\)</span> model we have rates of transition between states given by:
+<span class="math display">\[\begin{align*}
+    P\left[S_{t + \delta t} = S_t - 1, I_{t + \delta t} = I_t + 1\right] &amp;\approx \beta S I\\
+    P\left[I_{t + \delta t} = I_t - 1, R_{t + \delta t} = R_t + 1\right] &amp;\approx \gamma I\\
+\end{align*}\]</span></p>
+</div>
+<div id="summary-statistics-1" class="section level2">
+<h2><span class="header-section-number">4.2</span> Summary statistics</h2>
+<p>In the first instance, as before, let’s match to:</p>
+<ul>
+<li>final epidemic size (i.e. total number of removals across the time course of the epidemic), and</li>
+<li>time of final removal (in this case when the epidemic process ceased).</li>
+</ul>
+<p>Although simple, these two measures serve to give us some information on both the <em>length</em> and <em>magnitude</em> of the epidemic, and should contain useful information about the parameters. In this case the final removal time is 76 days and the final epidemic size is 30 individuals.</p>
+</div>
+<div id="simulation-model-1" class="section level2">
+<h2><span class="header-section-number">4.3</span> Simulation model</h2>
+<p>In order to use the <code>ABCSMC()</code> function, we need to define a function that runs the simulations and returns an <code>NA</code> if the simulation is rejected, or a vector of summary statistics if it is not.</p>
+<blockquote>
+<p><strong>Note</strong>: one thing to be careful of for this particular system, is that the data are aligned to time 0 being the time of the first <em>removal</em>, not <em>infection</em>. Just for illustration, we are going to simplify things in the first instance, and assume that the first infection happens 10 days before the first removal, which corresponds to adding 10 days to each of our observed removal times.</p>
+</blockquote>
+<p>Copy-and-paste the function below. Go through this function and understand what each line is doing.</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb76-1" data-line-number="1"><span class="co">## reset times so that initial infection occurs</span></a>
+<a class="sourceLine" id="cb76-2" data-line-number="2"><span class="co">## 10 days before first removal</span></a>
+<a class="sourceLine" id="cb76-3" data-line-number="3">smallpox<span class="op">$</span>time &lt;-<span class="st"> </span>smallpox<span class="op">$</span>time <span class="op">+</span><span class="st"> </span><span class="dv">10</span></a>
+<a class="sourceLine" id="cb76-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb76-5" data-line-number="5"><span class="co">## define the targeted summary statistics</span></a>
+<a class="sourceLine" id="cb76-6" data-line-number="6">sumStat &lt;-<span class="st"> </span><span class="kw">c</span>(</a>
+<a class="sourceLine" id="cb76-7" data-line-number="7">    <span class="dt">finalsize =</span> <span class="kw">sum</span>(smallpox<span class="op">$</span>removals), </a>
+<a class="sourceLine" id="cb76-8" data-line-number="8">    <span class="dt">finaltime =</span> <span class="kw">max</span>(smallpox<span class="op">$</span>time)</a>
+<a class="sourceLine" id="cb76-9" data-line-number="9">)</a>
+<a class="sourceLine" id="cb76-10" data-line-number="10"></a>
+<a class="sourceLine" id="cb76-11" data-line-number="11"><span class="co">## set initial states (1 initial infection in population of 120)</span></a>
+<a class="sourceLine" id="cb76-12" data-line-number="12">iniStates &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dt">S =</span> <span class="dv">119</span>, <span class="dt">I =</span> <span class="dv">1</span>, <span class="dt">R =</span> <span class="dv">0</span>)</a></code></pre></div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Set up an SIR model using <code>mparseRcpp()</code> to simulate smallpox outbreaks. Check that the model compiles.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-3" onclick="javascript:toggle('unnamed-chunk-3');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-3" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb77-1" data-line-number="1"><span class="co">## set up models</span></a>
+<a class="sourceLine" id="cb77-2" data-line-number="2">transitions &lt;-<span class="st"> </span><span class="kw">c</span>(</a>
+<a class="sourceLine" id="cb77-3" data-line-number="3">    <span class="st">&quot;S -&gt; beta * S * I -&gt; I&quot;</span>, </a>
+<a class="sourceLine" id="cb77-4" data-line-number="4">    <span class="st">&quot;I -&gt; gamma * I -&gt; R&quot;</span></a>
+<a class="sourceLine" id="cb77-5" data-line-number="5">)</a>
+<a class="sourceLine" id="cb77-6" data-line-number="6">compartments &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;S&quot;</span>, <span class="st">&quot;I&quot;</span>, <span class="st">&quot;R&quot;</span>)</a>
+<a class="sourceLine" id="cb77-7" data-line-number="7">pars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;beta&quot;</span>, <span class="st">&quot;gamma&quot;</span>)</a>
+<a class="sourceLine" id="cb77-8" data-line-number="8">model &lt;-<span class="st"> </span><span class="kw">mparseRcpp</span>(</a>
+<a class="sourceLine" id="cb77-9" data-line-number="9">    <span class="dt">transitions =</span> transitions, </a>
+<a class="sourceLine" id="cb77-10" data-line-number="10">    <span class="dt">compartments =</span> compartments,</a>
+<a class="sourceLine" id="cb77-11" data-line-number="11">    <span class="dt">pars =</span> pars</a>
+<a class="sourceLine" id="cb77-12" data-line-number="12">)</a>
+<a class="sourceLine" id="cb77-13" data-line-number="13"><span class="co">## compile model for use in ABC</span></a>
+<a class="sourceLine" id="cb77-14" data-line-number="14">model &lt;-<span class="st"> </span><span class="kw">compileRcpp</span>(model)</a>
+<a class="sourceLine" id="cb77-15" data-line-number="15">model</a></code></pre></div>
+<pre><code>## function (pars, tstart, tstop, u) 
+## .Call(&lt;pointer: 0x7f0ef584cdd0&gt;, pars, tstart, tstop, u)</code></pre>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Write a function called <code>simSIR()</code> that is used to simulate an outbreak and extract the relevant summary statistics from the model runs. the function needs to take at least the arguments: <code>pars</code>, <code>data</code>, <code>tols</code>, <code>u</code>, and return an <code>NA</code> if no match, or a vector of summary statistics if there is a match.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-5" onclick="javascript:toggle('unnamed-chunk-5');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-5" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb79-1" data-line-number="1"><span class="co">## set up function to perform simulation</span></a>
+<a class="sourceLine" id="cb79-2" data-line-number="2">simSIR &lt;-<span class="st"> </span><span class="cf">function</span>(pars, data, tols, u, model) {</a>
+<a class="sourceLine" id="cb79-3" data-line-number="3">    <span class="co">## run model</span></a>
+<a class="sourceLine" id="cb79-4" data-line-number="4">    sims &lt;-<span class="st"> </span><span class="kw">model</span>(pars, <span class="dv">0</span>, data[<span class="dv">2</span>] <span class="op">+</span><span class="st"> </span>tols[<span class="dv">2</span>], u)</a>
+<a class="sourceLine" id="cb79-5" data-line-number="5">    </a>
+<a class="sourceLine" id="cb79-6" data-line-number="6">    <span class="co">## this returns a vector of the form:</span></a>
+<a class="sourceLine" id="cb79-7" data-line-number="7">    <span class="co">## completed (1/0), t, S, I, R (here)</span></a>
+<a class="sourceLine" id="cb79-8" data-line-number="8">    <span class="cf">if</span>(sims[<span class="dv">1</span>] <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</a>
+<a class="sourceLine" id="cb79-9" data-line-number="9">        <span class="co">## if simulation rejected</span></a>
+<a class="sourceLine" id="cb79-10" data-line-number="10">        <span class="kw">return</span>(<span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb79-11" data-line-number="11">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb79-12" data-line-number="12">        <span class="co">## extract finaltime and finalsize</span></a>
+<a class="sourceLine" id="cb79-13" data-line-number="13">        finaltime &lt;-<span class="st"> </span>sims[<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb79-14" data-line-number="14">        finalsize &lt;-<span class="st"> </span>sims[<span class="dv">5</span>]</a>
+<a class="sourceLine" id="cb79-15" data-line-number="15">    }</a>
+<a class="sourceLine" id="cb79-16" data-line-number="16">    </a>
+<a class="sourceLine" id="cb79-17" data-line-number="17">    <span class="co">## return vector if match, else return NA</span></a>
+<a class="sourceLine" id="cb79-18" data-line-number="18">    <span class="cf">if</span>(<span class="kw">all</span>(<span class="kw">abs</span>(<span class="kw">c</span>(finalsize, finaltime) <span class="op">-</span><span class="st"> </span>data) <span class="op">&lt;=</span><span class="st"> </span>tols)){</a>
+<a class="sourceLine" id="cb79-19" data-line-number="19">        <span class="kw">return</span>(<span class="kw">c</span>(finalsize, finaltime))</a>
+<a class="sourceLine" id="cb79-20" data-line-number="20">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb79-21" data-line-number="21">        <span class="kw">return</span>(<span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb79-22" data-line-number="22">    }</a>
+<a class="sourceLine" id="cb79-23" data-line-number="23">}</a></code></pre></div>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Set up a set of gamma prior distributions for <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\gamma\)</span>, with shape parameter 10 in both cases, but rate parameters of 10,000 and 100 respectively.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-7" onclick="javascript:toggle('unnamed-chunk-7');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-7" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb80-1" data-line-number="1"><span class="co">## set priors</span></a>
+<a class="sourceLine" id="cb80-2" data-line-number="2">priors &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb80-3" data-line-number="3">    <span class="dt">parnames =</span> <span class="kw">c</span>(<span class="st">&quot;beta&quot;</span>, <span class="st">&quot;gamma&quot;</span>), </a>
+<a class="sourceLine" id="cb80-4" data-line-number="4">    <span class="dt">dist =</span> <span class="kw">rep</span>(<span class="st">&quot;gamma&quot;</span>, <span class="dv">2</span>), </a>
+<a class="sourceLine" id="cb80-5" data-line-number="5">    <span class="dt">stringsAsFactors =</span> F</a>
+<a class="sourceLine" id="cb80-6" data-line-number="6">)</a>
+<a class="sourceLine" id="cb80-7" data-line-number="7">priors<span class="op">$</span>p1 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">10</span>, <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb80-8" data-line-number="8">priors<span class="op">$</span>p2 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">10</span><span class="op">^</span><span class="dv">4</span>, <span class="dv">10</span><span class="op">^</span><span class="dv">2</span>)</a></code></pre></div>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Run 5 generations of the sequential ABC routine of <span class="citation">(Toni et al. <a href="#ref-tonietal:2009">2009</a>)</span> using starting tolerances of <span class="math inline">\(\epsilon = 50\)</span> and <code>ptols = 0.2</code>.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-9" onclick="javascript:toggle('unnamed-chunk-9');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-9" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb81-1" data-line-number="1"><span class="co">## set tolerances</span></a>
+<a class="sourceLine" id="cb81-2" data-line-number="2">tols &lt;-<span class="st"> </span><span class="kw">c</span>(</a>
+<a class="sourceLine" id="cb81-3" data-line-number="3">    <span class="dt">finalsize =</span> <span class="dv">50</span>,</a>
+<a class="sourceLine" id="cb81-4" data-line-number="4">    <span class="dt">finaltime =</span> <span class="dv">50</span></a>
+<a class="sourceLine" id="cb81-5" data-line-number="5">)</a>
+<a class="sourceLine" id="cb81-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb81-7" data-line-number="7"><span class="co">## run ABC-SMC algorithm</span></a>
+<a class="sourceLine" id="cb81-8" data-line-number="8">post &lt;-<span class="st"> </span><span class="kw">ABCSMC</span>(</a>
+<a class="sourceLine" id="cb81-9" data-line-number="9">    <span class="dt">x =</span> sumStat, </a>
+<a class="sourceLine" id="cb81-10" data-line-number="10">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb81-11" data-line-number="11">    <span class="dt">func =</span> simSIR, </a>
+<a class="sourceLine" id="cb81-12" data-line-number="12">    <span class="dt">u =</span> iniStates, </a>
+<a class="sourceLine" id="cb81-13" data-line-number="13">    <span class="dt">tols =</span> tols, </a>
+<a class="sourceLine" id="cb81-14" data-line-number="14">    <span class="dt">ptols =</span> <span class="fl">0.2</span>, </a>
+<a class="sourceLine" id="cb81-15" data-line-number="15">    <span class="dt">ngen =</span> <span class="dv">5</span>, </a>
+<a class="sourceLine" id="cb81-16" data-line-number="16">    <span class="dt">npart =</span> <span class="dv">50</span>,</a>
+<a class="sourceLine" id="cb81-17" data-line-number="17">    <span class="dt">parallel =</span> T, </a>
+<a class="sourceLine" id="cb81-18" data-line-number="18">    <span class="dt">model =</span> model</a>
+<a class="sourceLine" id="cb81-19" data-line-number="19">)</a></code></pre></div>
+<pre><code>## Number of cores: 24</code></pre>
+<pre><code>## Generation 1, accrate = 0.17, time = 0.14 secs</code></pre>
+<pre><code>## Generation 2, accrate = 0.017, time = 0.6 secs</code></pre>
+<pre><code>## Generation 3, accrate = 0.0041, time = 1.8 secs</code></pre>
+<pre><code>## Generation 4, accrate = 0.00066, time = 7.7 secs</code></pre>
+<pre><code>## Generation 5, accrate = 0.00026, time = 22 secs</code></pre>
+<pre><code>## 
+## Final run time = 32 secs</code></pre>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Plot the approximate posteriors and simulated outcomes. Produce posterior mean and standard deviation estimates for the parameters.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-11" onclick="javascript:toggle('unnamed-chunk-11');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-11" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb89-1" data-line-number="1"><span class="co">## plot approximate posteriors</span></a>
+<a class="sourceLine" id="cb89-2" data-line-number="2"><span class="kw">plot</span>(post)</a></code></pre></div>
+<p><img src="_main_files/figure-html/smallpox-solplot-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb90-1" data-line-number="1"><span class="co">## plot accepted outputs</span></a>
+<a class="sourceLine" id="cb90-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="st">&quot;output&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/smallpox-solplot-2.svg" width="60%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb91-1" data-line-number="1"><span class="co">## summarise posteriors</span></a>
+<a class="sourceLine" id="cb91-2" data-line-number="2"><span class="kw">summary</span>(post)</a></code></pre></div>
+<pre><code>##               Mean           SD   ESS
+## beta  0.0009694424 0.0002026094 44.72
+## gamma 0.1012129055 0.0210336078 44.72</code></pre>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+<h3> References</h3>
+<div id="refs" class="references">
+<div id="ref-oneill_roberts:1999">
+<p>O’Neill, Philip D., and Gareth O. Roberts. 1999. “Bayesian Inference for Partially Observed Stochastic Epidemics.” <em>Journal of the Royal Statistical Society. Series A (General)</em> 162: 121–29.</p>
+</div>
+<div id="ref-thompson_foege:1968">
+<p>Thompson, David, and William Foege. 1968. “Faith Tabernacle Smallpox Epidemic.” World Health Organization.</p>
+</div>
+<div id="ref-tonietal:2009">
+<p>Toni, Tina, David Welch, Natalja Strelkowa, Andreas Ipsen, and Michael P.H. Strumpf. 2009. “Approximate Bayesian Computation Scheme for Parameter Inference and Model Selection in Dynamical Systems.” <em>Journal of the Royal Society Interface</em> 6: 187–202.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="approximate-bayesian-computation.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="particle-mcmc.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": null,
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": ["_main.pdf"],
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

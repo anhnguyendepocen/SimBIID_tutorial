@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>5 Particle MCMC | Inference in infectious disease systems practicals</title>
+  <meta name="description" content="5 Particle MCMC | Inference in infectious disease systems practicals" />
+  <meta name="generator" content="bookdown 0.19 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="5 Particle MCMC | Inference in infectious disease systems practicals" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="5 Particle MCMC | Inference in infectious disease systems practicals" />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="5 Particle MCMC | Inference in infectious disease systems practicals" />
+  
+  <meta name="twitter:description" content="5 Particle MCMC | Inference in infectious disease systems practicals" />
+  
+
+<meta name="author" content="TJ McKinley" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="example-abakaliki-smallpox-outbreak.html"/>
+<link rel="next" href="epilogue.html"/>
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<script language="javascript"> 
+    function toggle(id) {
+        var ele = document.getElementById("toggleText" + id);
+        var text = document.getElementById("displayText" + id);
+        var buttonText = text.innerHTML.replace("Show ", "");
+        buttonText = buttonText.replace("Hide ", "");
+        if(ele.style.display == "block") {
+            ele.style.display = "none";
+            text.innerHTML = "Show " + buttonText;
+        } else {
+            ele.style.display = "block";
+            text.innerHTML = "Hide " + buttonText;
+        }
+    } 
+</script>
+
+<script language="javascript">
+    function openCode(evt, codeName, id) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent" + id);
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks" + id);
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(codeName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+</script>
+
+<script language="javascript">
+    function hide(id){
+        document.getElementById(id).style.display = "none";
+    }
+</script>
+</script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a><ul>
+<li class="chapter" data-level="1.1" data-path="index.html"><a href="index.html#installation"><i class="fa fa-check"></i><b>1.1</b> Installation</a><ul>
+<li class="chapter" data-level="1.1.1" data-path="index.html"><a href="index.html#windows"><i class="fa fa-check"></i><b>1.1.1</b> Windows</a></li>
+<li class="chapter" data-level="1.1.2" data-path="index.html"><a href="index.html#mac"><i class="fa fa-check"></i><b>1.1.2</b> Mac</a></li>
+<li class="chapter" data-level="1.1.3" data-path="index.html"><a href="index.html#linux"><i class="fa fa-check"></i><b>1.1.3</b> Linux</a></li>
+<li class="chapter" data-level="1.1.4" data-path="index.html"><a href="index.html#install-package"><i class="fa fa-check"></i><b>1.1.4</b> Install package</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html"><i class="fa fa-check"></i><b>2</b> Set up simple simulation model</a><ul>
+<li class="chapter" data-level="2.1" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#case-study"><i class="fa fa-check"></i><b>2.1</b> Case Study</a></li>
+<li class="chapter" data-level="2.2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#set-up-simulation-model"><i class="fa fa-check"></i><b>2.2</b> Set up simulation model</a></li>
+<li class="chapter" data-level="2.3" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#using-tspan"><i class="fa fa-check"></i><b>2.3</b> Using <code>tspan</code></a></li>
+<li class="chapter" data-level="2.4" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#plotting-simulations"><i class="fa fa-check"></i><b>2.4</b> Plotting simulations</a></li>
+<li class="chapter" data-level="2.5" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#running-multiple-simulations"><i class="fa fa-check"></i><b>2.5</b> Running multiple simulations</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html"><i class="fa fa-check"></i><b>3</b> Approximate Bayesian Computation</a><ul>
+<li class="chapter" data-level="3.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-model"><i class="fa fa-check"></i><b>3.1</b> Simulation model</a></li>
+<li class="chapter" data-level="3.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#arguments-to-abcsmc-function"><i class="fa fa-check"></i><b>3.2</b> Arguments to <code>ABCSMC()</code> function</a><ul>
+<li class="chapter" data-level="3.2.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#summary-statistics"><i class="fa fa-check"></i><b>3.2.1</b> Summary statistics</a></li>
+<li class="chapter" data-level="3.2.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#priors"><i class="fa fa-check"></i><b>3.2.2</b> Prior distributions</a></li>
+<li class="chapter" data-level="3.2.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-function"><i class="fa fa-check"></i><b>3.2.3</b> Simulation function</a></li>
+<li class="chapter" data-level="3.2.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#inistates"><i class="fa fa-check"></i><b>3.2.4</b> Initial states</a></li>
+<li class="chapter" data-level="3.2.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#tolerances"><i class="fa fa-check"></i><b>3.2.5</b> Tolerances</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#running-abcsmc"><i class="fa fa-check"></i><b>3.3</b> Running <code>ABCSMC()</code></a></li>
+<li class="chapter" data-level="3.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#calculate-posterior-for-transformations-of-parameters"><i class="fa fa-check"></i><b>3.4</b> Calculate posterior for transformations of parameters</a></li>
+<li class="chapter" data-level="3.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#adding-additional-matching-criteria"><i class="fa fa-check"></i><b>3.5</b> Adding additional matching criteria</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html"><i class="fa fa-check"></i><b>4</b> Example: Abakaliki smallpox outbreak</a><ul>
+<li class="chapter" data-level="4.1" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#sir-model"><i class="fa fa-check"></i><b>4.1</b> SIR model</a></li>
+<li class="chapter" data-level="4.2" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#summary-statistics-1"><i class="fa fa-check"></i><b>4.2</b> Summary statistics</a></li>
+<li class="chapter" data-level="4.3" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#simulation-model-1"><i class="fa fa-check"></i><b>4.3</b> Simulation model</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="particle-mcmc.html"><a href="particle-mcmc.html"><i class="fa fa-check"></i><b>5</b> Particle MCMC</a><ul>
+<li class="chapter" data-level="5.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#arguments-for-pmcmc-function"><i class="fa fa-check"></i><b>5.1</b> Arguments for <code>PMCMC()</code> function</a><ul>
+<li class="chapter" data-level="5.1.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#data"><i class="fa fa-check"></i><b>5.1.1</b> Data</a></li>
+<li class="chapter" data-level="5.1.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#obsprocess"><i class="fa fa-check"></i><b>5.1.2</b> Observation process</a></li>
+</ul></li>
+<li class="chapter" data-level="5.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#running-the-pmcmc-algorithm"><i class="fa fa-check"></i><b>5.2</b> Running the PMCMC algorithm</a></li>
+<li class="chapter" data-level="5.3" data-path="particle-mcmc.html"><a href="particle-mcmc.html#optimising-the-number-of-particles"><i class="fa fa-check"></i><b>5.3</b> Optimising the number of particles</a></li>
+<li class="chapter" data-level="5.4" data-path="particle-mcmc.html"><a href="particle-mcmc.html#visualising-and-summarising-the-posterior-distributions"><i class="fa fa-check"></i><b>5.4</b> Visualising and summarising the posterior distributions</a></li>
+<li class="chapter" data-level="5.5" data-path="particle-mcmc.html"><a href="particle-mcmc.html#predictive-posterior-distributions"><i class="fa fa-check"></i><b>5.5</b> Predictive posterior distributions</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="epilogue.html"><a href="epilogue.html"><i class="fa fa-check"></i><b>6</b> Epilogue</a></li>
+<li class="chapter" data-level="7" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i><b>7</b> References</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Inference in infectious disease systems practicals</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="particle-mcmc" class="section level1">
+<h1><span class="header-section-number">5</span> Particle MCMC</h1>
+<p>Here we will return to the influenza in a boarding school example. Please note that an alternative frequentist approach, using maximum likelihood via iterated filtering (MIF) framework of <span class="citation">Ionides, Bretó, and King (<a href="#ref-ionidesetal:2006">2006</a>)</span>, and implemented in the <code>pomp</code> package, can be found at:</p>
+<p><a href="https://kingaa.github.io/sbied/mif/mif.html#an-iterated-filtering-algorithm-if2" class="uri">https://kingaa.github.io/sbied/mif/mif.html#an-iterated-filtering-algorithm-if2</a>.</p>
+<p>Here we use a simpler model but use a full Bayesian approach using a particle Markov chain Monte Carlo (PMCMC) routine <span class="citation">(Andrieu, Doucet, and Holenstein <a href="#ref-andrieuetal:2010">2010</a>)</span> with a bootstrap particle filter to estimate the likelihood <span class="citation">(Gordon, Salmond, and Smith <a href="#ref-gordonetal:1993">1993</a>)</span>, as described in the lectures.</p>
+<p>Note that PMCMC is extremely computationally intensive, and the only real way to make it tractable for many problems is to code both the simulation code and the MCMC code in a low-level language such as C/C++. We could use <code>pomp</code> to fit this model using the same PMCMC routine described here, but the syntax is different to the <code>SimInf</code> style. So instead the <code>SimBIID</code> package provides a function <code>PMCMC()</code> that runs this algorithm, and if you pass a <code>SimBIID_model</code> object to this function, it will automatically compile in the correct manner.</p>
+<p>As before, we load the data and the <code>SimBIID</code> package:</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb93-1" data-line-number="1"><span class="co">## load libraries</span></a>
+<a class="sourceLine" id="cb93-2" data-line-number="2"><span class="kw">library</span>(outbreaks)</a>
+<a class="sourceLine" id="cb93-3" data-line-number="3"><span class="kw">library</span>(SimBIID)</a>
+<a class="sourceLine" id="cb93-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb93-5" data-line-number="5"><span class="co">## set up data</span></a>
+<a class="sourceLine" id="cb93-6" data-line-number="6">flu &lt;-<span class="st"> </span>influenza_england_<span class="dv">1978</span>_school</a>
+<a class="sourceLine" id="cb93-7" data-line-number="7">flu<span class="op">$</span>day &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(flu)</a></code></pre></div>
+<div id="arguments-for-pmcmc-function" class="section level2">
+<h2><span class="header-section-number">5.1</span> Arguments for <code>PMCMC()</code> function</h2>
+<p>If you look at the help file for the <code>PMCMC()</code> function (e.g. <code>?PMCMC</code>), you will see the main arguments to the <code>PMCMC()</code> function , which are summarised below:</p>
+<ul>
+<li><code>x</code>: a <code>data.frame</code> containing time series count data, with the first column called <code>t</code>, followed by columns of time-series counts. The time-series counts columns must be in the order of the <code>counts</code> object in the <code>func</code> function (see below).</li>
+<li><code>priors</code>: a <code>data.frame</code> containing prior information (in the same format as for the <code>ABCSMC()</code> function—see Section <a href="approximate-bayesian-computation.html#priors">3.2.2</a>).</li>
+<li><code>func</code>: a <code>SimBIID_model</code> object (which can be created using <code>mparseRcpp()</code>). This must have a stochastic observation process specified—see Section <a href="particle-mcmc.html#obsprocess">5.1.2</a>.</li>
+<li><code>u</code>: a named vector of initial states (in the same format as for the <code>ABCSMC()</code> function—see Section <a href="approximate-bayesian-computation.html#inistates">3.2.4</a>).</li>
+<li><code>npart</code>: an integer specifying the number of particles for the bootstrap particle filter.</li>
+<li><code>iniPars</code>: a named vector of initial values for the parameters of the model. If left unspecified, then these are sampled from the prior distribution(s).</li>
+<li><code>niter</code>: an integer specifying the number of iterations to run the MCMC.</li>
+</ul>
+<div id="data" class="section level3">
+<h3><span class="header-section-number">5.1.1</span> Data</h3>
+<p>The <code>x</code> argument that we will pass to the <code>PMCMC()</code> function will be a <code>data.frame</code> with the first column corresponding to <code>t</code> and the second corresponding to the <em>observed</em> <span class="math inline">\(R\)</span> curve. Here we set up a <code>data.frame</code> called <code>flu_dat</code> that is in the correct format:</p>
+<div class="sourceCode" id="cb94"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb94-1" data-line-number="1"><span class="co">## set up data to pass to PMCMC</span></a>
+<a class="sourceLine" id="cb94-2" data-line-number="2">flu_dat &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">t =</span> flu<span class="op">$</span>day, <span class="dt">Robs =</span> flu<span class="op">$</span>in_bed)</a>
+<a class="sourceLine" id="cb94-3" data-line-number="3"><span class="kw">head</span>(flu_dat)</a></code></pre></div>
+<pre><code>##   t Robs
+## 1 1    3
+## 2 2    8
+## 3 3   26
+## 4 4   76
+## 5 5  225
+## 6 6  298</code></pre>
+</div>
+<div id="obsprocess" class="section level3">
+<h3><span class="header-section-number">5.1.2</span> Observation process</h3>
+<p>When we specify our simulation model using <code>mparseRcpp()</code>, we also need to specify a <strong>stochastic</strong> observation process. This is passed as an argument called <code>obsProcess</code> to the <code>mparseRcpp()</code> function. This argument must be a <code>data.frame</code>, with columns in the order: <code>dataNames</code>, <code>dist</code>, <code>p1</code>, <code>p2</code>.</p>
+<ul>
+<li><code>dataNames</code> is a character denoting the observed data (must match a column in the <code>x</code> data frame—see Section <a href="particle-mcmc.html#data">5.1.1</a>);</li>
+<li><code>dist</code> is a character specifying the distribution of the observation process (must be one of <code>&quot;unif&quot;</code>, <code>&quot;pois&quot;</code> or <code>&quot;binom&quot;</code> at the current time);</li>
+<li><code>p1</code> is the first parameter (the lower bound in the case of <code>&quot;unif&quot;</code>, the rate in the case of <code>&quot;pois&quot;</code>, or the size in the case of <code>&quot;binom&quot;</code>);</li>
+<li><code>p2</code> is the second parameter (the upper bound in the case of <code>&quot;unif&quot;</code>, <code>NA</code> in the case of <code>&quot;pois&quot;</code>, and <code>prob</code> in the case of <code>&quot;binom&quot;</code>).</li>
+</ul>
+<p>Here we will place a Poisson observation process around the <span class="math inline">\(R\)</span> curve, such that:
+<span class="math display">\[
+    R_t \sim \mbox{Po}(R^\prime_t + 10^{-6}),
+\]</span>
+where <span class="math inline">\(R_t\)</span> is the <strong>observed</strong> <span class="math inline">\(R\)</span> count at time <span class="math inline">\(t\)</span>, <span class="math inline">\(R^\prime_t\)</span> is the simulated count. We add a small constant (<span class="math inline">\(10^{-6}\)</span> here) following the suggestion <a href="https://kingaa.github.io/sbied/mif/mif.html#applying-if2-to-the-boarding-school-influenza-outbreak">here</a>. This is important to prevent numerical errors, since the simulated counts <span class="math inline">\(R^\prime_t\)</span> could be zero, which would result in the Poisson rate parameter being zero, which violates the conditions of the Poisson distribution, and would thus produce non-finite likelihood estimates. The addition of a small constant prevents this from happening.</p>
+<p>The idea of putting some form of Poisson noise on the parameters of time-series count models has been used various times in the literature <span class="citation">(e.g. Funk et al. <a href="#ref-funketal:2016">2016</a>)</span>. Often the observation term is placed on the <em>incidence</em> curves (i.e. new infections / removals). The variance of the Poisson distribution is equal to the mean (so a mean of <span class="math inline">\(R^\prime_t\)</span> has a variance of <span class="math inline">\(R^\prime_t\)</span> also), and since incidence curves tend to be smaller in magnitude than the counts in each class, then this can result in a tighter match between the simulations and the data. It is often usual that the mean of the Poisson noise is also scaled by some parameter corresponding to an <em>under-reporting</em> rate, meaning that the model assumes that the average observed counts are less than the true values.</p>
+<p>In this example, we do not have <em>incidence</em> curves, so we place a Poisson error around the <span class="math inline">\(R^\prime_t\)</span> counts instead. Note here that there is no strong epidemiological reason for the Poisson term in this case. We can assume that in a closed boarding school population, it would be unlikely that too many ill boys would be missed, and hence the observed counts are likely to be close to the true counts, and thus the amount of variation added by the Poisson noise term here is likely to be larger than we might ideally think is present in the data. In essence the Poisson term is providing an <strong>approximation</strong>, allowing simulations to have a non-negligible weight even if they do not match the observed curves exactly. As such the introduction of this term in this instance is introducing some approximation into the process, but in doing so is allowing us to fit a model in a computationally feasible way. In practice I would want to use a distribution with lower variances however.</p>
+<p>To this end, other options might include putting a Gaussian error around the observed counts, where the variance could be made smaller than the mean (e.g. <span class="math inline">\(R_t \sim N(R^\prime_t, \alpha R^\prime_t + 1)\)</span> for <span class="math inline">\(\alpha \in (0, 1)\)</span>). This would penalise simulations that lie further away from the observed data more than the Poisson model we are using, at the cost of requiring a larger number of particles / a longer run time to evaluate. (Bear in mind also that the Gaussian models <em>continuous</em> random variables, and is unbounded. Hence if you simulate from this observation process then you could get simulated counts that are both non-integer and negative-valued. This type of approximation might help model fitting, but is a good example of where the the biological interpretation of the noise process is not always realistic, but might be “good enough”.)</p>
+<p>Hence, other (better) observation processes could also be used, but this choice allows us to produce some reasonable estimates in a reasonable computational load. The observed data, <span class="math inline">\(R_t\)</span>, is coded as the <code>Robs</code> column in the <code>flu_dat</code> data frame—see Section <a href="particle-mcmc.html#data">5.1.1</a>. To set up the observation process defined above, we define a <code>data.frame</code> as follows:</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb96-1" data-line-number="1"><span class="co">## set up observation process</span></a>
+<a class="sourceLine" id="cb96-2" data-line-number="2">obs &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb96-3" data-line-number="3">    <span class="dt">dataNames =</span> <span class="st">&quot;Robs&quot;</span>,</a>
+<a class="sourceLine" id="cb96-4" data-line-number="4">    <span class="dt">dist =</span> <span class="st">&quot;pois&quot;</span>,</a>
+<a class="sourceLine" id="cb96-5" data-line-number="5">    <span class="dt">p1 =</span> <span class="st">&quot;R + 1e-5&quot;</span>,</a>
+<a class="sourceLine" id="cb96-6" data-line-number="6">    <span class="dt">p2 =</span> <span class="ot">NA</span>,</a>
+<a class="sourceLine" id="cb96-7" data-line-number="7">    <span class="dt">stringsAsFactors =</span> F</a>
+<a class="sourceLine" id="cb96-8" data-line-number="8">)</a>
+<a class="sourceLine" id="cb96-9" data-line-number="9">obs</a></code></pre></div>
+<pre><code>##   dataNames dist       p1 p2
+## 1      Robs pois R + 1e-5 NA</code></pre>
+<p>A key point is that we do not specify a <code>tspan</code> argument. Rather, these will be determined by the <code>x</code> argument that we specified in Section <a href="particle-mcmc.html#data">5.1.1</a>.</p>
+<p>For completeness, we can remind ourselves that the simulation model is specified as:</p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb98-1" data-line-number="1"><span class="co">## set up model</span></a>
+<a class="sourceLine" id="cb98-2" data-line-number="2">transitions &lt;-<span class="st"> </span><span class="kw">c</span>(</a>
+<a class="sourceLine" id="cb98-3" data-line-number="3">    <span class="st">&quot;S -&gt; beta * S * I / (S + I + R + R1) -&gt; I&quot;</span>, </a>
+<a class="sourceLine" id="cb98-4" data-line-number="4">    <span class="st">&quot;I -&gt; gamma * I -&gt; R&quot;</span>,</a>
+<a class="sourceLine" id="cb98-5" data-line-number="5">    <span class="st">&quot;R -&gt; gamma1 * R -&gt; R1&quot;</span></a>
+<a class="sourceLine" id="cb98-6" data-line-number="6">)</a>
+<a class="sourceLine" id="cb98-7" data-line-number="7">compartments &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;S&quot;</span>, <span class="st">&quot;I&quot;</span>, <span class="st">&quot;R&quot;</span>, <span class="st">&quot;R1&quot;</span>)</a>
+<a class="sourceLine" id="cb98-8" data-line-number="8">pars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;beta&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;gamma1&quot;</span>)</a>
+<a class="sourceLine" id="cb98-9" data-line-number="9">model &lt;-<span class="st"> </span><span class="kw">mparseRcpp</span>(</a>
+<a class="sourceLine" id="cb98-10" data-line-number="10">    <span class="dt">transitions =</span> transitions, </a>
+<a class="sourceLine" id="cb98-11" data-line-number="11">    <span class="dt">compartments =</span> compartments,</a>
+<a class="sourceLine" id="cb98-12" data-line-number="12">    <span class="dt">pars =</span> pars,</a>
+<a class="sourceLine" id="cb98-13" data-line-number="13">    <span class="dt">obsProcess =</span> obs</a>
+<a class="sourceLine" id="cb98-14" data-line-number="14">)</a></code></pre></div>
+<blockquote>
+<p><strong>Note:</strong> we do <strong>not</strong> have to pre-compile the model here. The <code>PMCMC()</code> function will do this for us. This is because we need to compile as an object to run from C rather than R, so the <code>PMCMC()</code> function deals with this automatically.</p>
+</blockquote>
+</div>
+</div>
+<div id="running-the-pmcmc-algorithm" class="section level2">
+<h2><span class="header-section-number">5.2</span> Running the PMCMC algorithm</h2>
+<p>Now we run the PMCMC algorithm for 5,000 iterations, using 25 particles. We pass the same initial states and priors as in the ABC-SMC practical. We print summaries to the screen every 1,000 iterations (<code>nprintsum = 1000</code>):</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb99-1" data-line-number="1"><span class="co">## set priors</span></a>
+<a class="sourceLine" id="cb99-2" data-line-number="2">priors &lt;-<span class="st"> </span><span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb99-3" data-line-number="3">    <span class="dt">parnames =</span> <span class="kw">c</span>(<span class="st">&quot;beta&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;gamma1&quot;</span>), </a>
+<a class="sourceLine" id="cb99-4" data-line-number="4">    <span class="dt">dist =</span> <span class="kw">rep</span>(<span class="st">&quot;unif&quot;</span>, <span class="dv">3</span>), </a>
+<a class="sourceLine" id="cb99-5" data-line-number="5">    <span class="dt">stringsAsFactors =</span> F)</a>
+<a class="sourceLine" id="cb99-6" data-line-number="6">priors<span class="op">$</span>p1 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb99-7" data-line-number="7">priors<span class="op">$</span>p2 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb99-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb99-9" data-line-number="9"><span class="co">## define initial states</span></a>
+<a class="sourceLine" id="cb99-10" data-line-number="10">iniStates &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dt">S =</span> <span class="dv">762</span>, <span class="dt">I =</span> <span class="dv">1</span>, <span class="dt">R =</span> <span class="dv">0</span>, <span class="dt">R1 =</span> <span class="dv">0</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb100"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb100-1" data-line-number="1"><span class="co">## run PMCMC algorithm</span></a>
+<a class="sourceLine" id="cb100-2" data-line-number="2">post &lt;-<span class="st"> </span><span class="kw">PMCMC</span>(</a>
+<a class="sourceLine" id="cb100-3" data-line-number="3">    <span class="dt">x =</span> flu_dat, </a>
+<a class="sourceLine" id="cb100-4" data-line-number="4">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb100-5" data-line-number="5">    <span class="dt">func =</span> model, </a>
+<a class="sourceLine" id="cb100-6" data-line-number="6">    <span class="dt">u =</span> iniStates,</a>
+<a class="sourceLine" id="cb100-7" data-line-number="7">    <span class="dt">npart =</span> <span class="dv">25</span>,</a>
+<a class="sourceLine" id="cb100-8" data-line-number="8">    <span class="dt">niter =</span> <span class="dv">5000</span>, </a>
+<a class="sourceLine" id="cb100-9" data-line-number="9">    <span class="dt">nprintsum =</span> <span class="dv">1000</span></a>
+<a class="sourceLine" id="cb100-10" data-line-number="10">)</a></code></pre></div>
+<pre><code>## Number of iterations: 5000
+## Number of particles: 25
+## Mixing proportion for proposal: 0.05
+## Start adaptive proposal at iteration: 100
+## 
+## Number of parameters: 3
+## 
+## Priors:
+## beta ~ U(lower = 0, upper = 5)
+## gamma ~ U(lower = 0, upper = 5)
+## gamma1 ~ U(lower = 0, upper = 5)
+## 
+## Number of classes: 4
+## 
+## Initial states:
+## state[0] = 762
+## state[1] = 1
+## state[2] = 0
+## state[3] = 0
+## 
+## Initialising system...
+## Initialisation complete!
+## 
+## Initial parameter values:
+## 
+## beta = 2.73907
+## gamma = 1.0908
+## gamma1 = 0.17482
+## 
+## Starting runs...
+## i = 1000 acc = 0.07 time = 14.83 secs 
+## i = 2000 acc = 0.06 time = 15.29 secs 
+## i = 3000 acc = 0.05 time = 15.40 secs 
+## i = 4000 acc = 0.02 time = 12.91 secs 
+## i = 5000 acc = 0.03 time = 12.24 secs 
+## Final time = 70.66 secs</code></pre>
+<div class="sourceCode" id="cb102"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb102-1" data-line-number="1"><span class="co">## plot MCMC traces</span></a>
+<a class="sourceLine" id="cb102-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="st">&quot;trace&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/boot-trace-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<p>We can see that the chain looks like it’s converging towards a stationary distribution, but let’s run it for a bit longer. We can do this simply by passing our current <code>PMCMC</code> object back into the <code>PMCMC()</code> function:</p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb103-1" data-line-number="1">post &lt;-<span class="st"> </span><span class="kw">PMCMC</span>(post, <span class="dt">niter =</span> <span class="dv">5000</span>, <span class="dt">nprintsum =</span> <span class="dv">1000</span>)</a></code></pre></div>
+<p>(I’ve suppressed the output for brevity here…)</p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb104-1" data-line-number="1"><span class="kw">plot</span>(post, <span class="st">&quot;trace&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/boot-extrun-plot-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+</div>
+<div id="optimising-the-number-of-particles" class="section level2">
+<h2><span class="header-section-number">5.3</span> Optimising the number of particles</h2>
+<p>The mixing of the chain and the speed of convergence is related to the number of particles (amongst other things). There is no strong consensus, but a rule-of-thumb is to try to choose the number of particles such that the variance of the log-likelihood estimate at a suitable set of parameters <span class="math inline">\(\theta^\prime\)</span> is between 1–3. Clearly the larger the number of particles, the higher the computational burden, so in practice the additional computational burden of the simulations must be balanced against the improved mixing and faster convergence. This is tricky, so instead here we take a simpler approach.</p>
+<p>Firstly we run the chain for a fixed number of particles until it looks like the chain has converged. Then we choose a set of parameter values <span class="math inline">\(\theta^\prime\)</span> chosen to be the posterior medians. We then generate 500 estimates of the log-likelihood for a range of different numbers of particles, from which we can calculate the variance of these estimates. We then choose the smallest number of particles with a variance of the log-likelihood of less than 3.</p>
+<p>Hence, from the training runs above we can remove some burn-in iterations, and extract the posterior medians:</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb105-1" data-line-number="1">postMed &lt;-<span class="st"> </span><span class="kw">window</span>(post, <span class="dt">start =</span> <span class="dv">2000</span>)</a>
+<a class="sourceLine" id="cb105-2" data-line-number="2">postMed &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(postMed<span class="op">$</span>pars)</a>
+<a class="sourceLine" id="cb105-3" data-line-number="3">postMed &lt;-<span class="st"> </span><span class="kw">apply</span>(postMed, <span class="dv">2</span>, median)</a>
+<a class="sourceLine" id="cb105-4" data-line-number="4">postMed &lt;-<span class="st"> </span>postMed[<span class="op">-</span><span class="kw">length</span>(postMed)]</a>
+<a class="sourceLine" id="cb105-5" data-line-number="5">postMed</a></code></pre></div>
+<pre><code>##      beta     gamma    gamma1 
+## 3.0804375 1.0818692 0.4504811</code></pre>
+<p>We can produce 500 estimates of the log-likelihood by setting the <code>fixpars = T</code> argument to the <code>PMCMC()</code> function, passing in the <code>postMed</code> estimates above.</p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb107-1" data-line-number="1">flu_train &lt;-<span class="st"> </span><span class="kw">PMCMC</span>(</a>
+<a class="sourceLine" id="cb107-2" data-line-number="2">    <span class="dt">x =</span> flu_dat, </a>
+<a class="sourceLine" id="cb107-3" data-line-number="3">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb107-4" data-line-number="4">    <span class="dt">func =</span> model, </a>
+<a class="sourceLine" id="cb107-5" data-line-number="5">    <span class="dt">u =</span> iniStates,</a>
+<a class="sourceLine" id="cb107-6" data-line-number="6">    <span class="dt">npart =</span> <span class="dv">25</span>, </a>
+<a class="sourceLine" id="cb107-7" data-line-number="7">    <span class="dt">iniPars =</span> postMed,</a>
+<a class="sourceLine" id="cb107-8" data-line-number="8">    <span class="dt">niter =</span> <span class="dv">500</span>, </a>
+<a class="sourceLine" id="cb107-9" data-line-number="9">    <span class="dt">fixpars =</span> T</a>
+<a class="sourceLine" id="cb107-10" data-line-number="10">)</a></code></pre></div>
+<p>This produces a list where the first element is a matrix of log-likelihood estimates. Hence we can extract this and calculate the sample variance as follows:</p>
+<div class="sourceCode" id="cb108"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb108-1" data-line-number="1"><span class="co">## calculate the sample variance</span></a>
+<a class="sourceLine" id="cb108-2" data-line-number="2">flu_train &lt;-<span class="st"> </span><span class="kw">var</span>(flu_train<span class="op">$</span>output)</a>
+<a class="sourceLine" id="cb108-3" data-line-number="3">flu_train</a></code></pre></div>
+<pre><code>##          [,1]
+## [1,] 59956.58</code></pre>
+<p>Here the variance is <span class="math inline">\(5.9957\times 10^{4}\)</span>, which is larger than 3. Hence let’s try increasing the number of particles and repeating these steps.</p>
+<div class="sourceCode" id="cb110"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb110-1" data-line-number="1"><span class="co">## generate numbers of particles to trial</span></a>
+<a class="sourceLine" id="cb110-2" data-line-number="2">npart &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">50</span>, <span class="dv">75</span>, <span class="dv">100</span>, <span class="dv">125</span>)</a>
+<a class="sourceLine" id="cb110-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb110-4" data-line-number="4">flu_train &lt;-<span class="st"> </span><span class="kw">list</span>()</a>
+<a class="sourceLine" id="cb110-5" data-line-number="5"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">length</span>(npart)){</a>
+<a class="sourceLine" id="cb110-6" data-line-number="6">    flu_train[[i]] &lt;-<span class="st"> </span><span class="kw">PMCMC</span>(</a>
+<a class="sourceLine" id="cb110-7" data-line-number="7">       <span class="dt">x =</span> flu_dat, </a>
+<a class="sourceLine" id="cb110-8" data-line-number="8">       <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb110-9" data-line-number="9">       <span class="dt">func =</span> model, </a>
+<a class="sourceLine" id="cb110-10" data-line-number="10">       <span class="dt">u =</span> iniStates, </a>
+<a class="sourceLine" id="cb110-11" data-line-number="11">       <span class="dt">npart =</span> npart[i], </a>
+<a class="sourceLine" id="cb110-12" data-line-number="12">       <span class="dt">iniPars =</span> postMed,</a>
+<a class="sourceLine" id="cb110-13" data-line-number="13">       <span class="dt">niter =</span> <span class="dv">500</span>, </a>
+<a class="sourceLine" id="cb110-14" data-line-number="14">       <span class="dt">fixpars =</span> T</a>
+<a class="sourceLine" id="cb110-15" data-line-number="15">    )</a>
+<a class="sourceLine" id="cb110-16" data-line-number="16">    flu_train[[i]] &lt;-<span class="st"> </span><span class="kw">var</span>(flu_train[[i]]<span class="op">$</span>output)</a>
+<a class="sourceLine" id="cb110-17" data-line-number="17">}</a>
+<a class="sourceLine" id="cb110-18" data-line-number="18"><span class="kw">names</span>(flu_train) &lt;-<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;npart = &quot;</span>, npart)</a>
+<a class="sourceLine" id="cb110-19" data-line-number="19">flu_train &lt;-<span class="st"> </span><span class="kw">do.call</span>(<span class="st">&quot;c&quot;</span>, flu_train)</a></code></pre></div>
+<div class="sourceCode" id="cb111"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb111-1" data-line-number="1">flu_train</a></code></pre></div>
+<pre><code>##  npart = 50  npart = 75 npart = 100 npart = 125 
+##    6.559770    3.601458    1.751317    1.409048</code></pre>
+<p>Here we will choose the number of particles to be 75 (ideally should be a bit larger—but for the sake of exposition we’ll tone down a touch). We now start a new chain using 75 particles, and with starting values derived from the training runs.</p>
+<div class="sourceCode" id="cb113"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb113-1" data-line-number="1">post &lt;-<span class="st"> </span><span class="kw">PMCMC</span>(</a>
+<a class="sourceLine" id="cb113-2" data-line-number="2">    <span class="dt">x =</span> flu_dat, </a>
+<a class="sourceLine" id="cb113-3" data-line-number="3">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb113-4" data-line-number="4">    <span class="dt">func =</span> model, </a>
+<a class="sourceLine" id="cb113-5" data-line-number="5">    <span class="dt">npart =</span> <span class="dv">75</span>, </a>
+<a class="sourceLine" id="cb113-6" data-line-number="6">    <span class="dt">u =</span> iniStates, </a>
+<a class="sourceLine" id="cb113-7" data-line-number="7">    <span class="dt">iniPars =</span> postMed,</a>
+<a class="sourceLine" id="cb113-8" data-line-number="8">    <span class="dt">niter =</span> <span class="dv">10000</span>, </a>
+<a class="sourceLine" id="cb113-9" data-line-number="9">    <span class="dt">nprintsum =</span> <span class="dv">1000</span></a>
+<a class="sourceLine" id="cb113-10" data-line-number="10">)</a></code></pre></div>
+<p>(Again I have suppressed the output here for brevity…)</p>
+<div class="sourceCode" id="cb114"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb114-1" data-line-number="1"><span class="co">## plot and summarise MCMC output</span></a>
+<a class="sourceLine" id="cb114-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="st">&quot;trace&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/boot-fullsum-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+</div>
+<div id="visualising-and-summarising-the-posterior-distributions" class="section level2">
+<h2><span class="header-section-number">5.4</span> Visualising and summarising the posterior distributions</h2>
+<p>We can visualise the approximate posterior distributions (after removing some burn-in):</p>
+<div class="sourceCode" id="cb115"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb115-1" data-line-number="1"><span class="co">## remove burn-in</span></a>
+<a class="sourceLine" id="cb115-2" data-line-number="2">post &lt;-<span class="st"> </span><span class="kw">window</span>(post, <span class="dt">start =</span> <span class="dv">2000</span>)</a>
+<a class="sourceLine" id="cb115-3" data-line-number="3"><span class="co">## plot and summarise outputs</span></a>
+<a class="sourceLine" id="cb115-4" data-line-number="4"><span class="kw">plot</span>(post)</a></code></pre></div>
+<p><img src="_main_files/figure-html/boot-fullsum1-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb116"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb116-1" data-line-number="1"><span class="kw">summary</span>(post)</a></code></pre></div>
+<pre><code>## 
+## Iterations = 1:8001
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 8001 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##             Mean      SD  Naive SE Time-series SE
+## beta      2.9938 0.28385 0.0031733        0.01574
+## gamma     1.0457 0.20216 0.0022601        0.01074
+## gamma1    0.4608 0.02824 0.0003157        0.00157
+## logPost -67.0245 1.68719 0.0188622        0.14081
+## 
+## 2. Quantiles for each variable:
+## 
+##             2.5%      25%      50%      75%    97.5%
+## beta      2.5032   2.7964   2.9512   3.1595   3.6210
+## gamma     0.7229   0.9132   1.0140   1.1655   1.5381
+## gamma1    0.4014   0.4410   0.4614   0.4805   0.5113
+## logPost -70.5725 -68.0913 -66.8836 -65.9348 -63.7634</code></pre>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Produce summaries of the posteriors for <span class="math inline">\(R_0\)</span> and the average length of the infectious period. <strong>Hint</strong>: use a <code>transfunc</code> argument as before to the <code>summary()</code> function.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-13" onclick="javascript:toggle('unnamed-chunk-13');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-13" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb118"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb118-1" data-line-number="1"><span class="co">## function to calculate R0 and length of</span></a>
+<a class="sourceLine" id="cb118-2" data-line-number="2"><span class="co">## infectious periods</span></a>
+<a class="sourceLine" id="cb118-3" data-line-number="3">R0fn &lt;-<span class="st"> </span><span class="cf">function</span>(beta, gamma) {</a>
+<a class="sourceLine" id="cb118-4" data-line-number="4">    <span class="kw">data.frame</span>(</a>
+<a class="sourceLine" id="cb118-5" data-line-number="5">        <span class="dt">R0 =</span> beta <span class="op">/</span><span class="st"> </span>gamma, </a>
+<a class="sourceLine" id="cb118-6" data-line-number="6">        <span class="dt">infperiod =</span> <span class="dv">1</span> <span class="op">/</span><span class="st"> </span>gamma</a>
+<a class="sourceLine" id="cb118-7" data-line-number="7">    )</a>
+<a class="sourceLine" id="cb118-8" data-line-number="8">}</a>
+<a class="sourceLine" id="cb118-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb118-10" data-line-number="10"><span class="co">## summarise approximate posterior</span></a>
+<a class="sourceLine" id="cb118-11" data-line-number="11"><span class="kw">summary</span>(post, <span class="dt">transfunc =</span> R0fn)</a></code></pre></div>
+<pre><code>## 
+## Iterations = 1:8001
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 8001 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##               Mean      SD  Naive SE Time-series SE
+## beta        2.9938 0.28385 0.0031733       0.015745
+## gamma       1.0457 0.20216 0.0022601       0.010738
+## gamma1      0.4608 0.02824 0.0003157       0.001570
+## logPost   -67.0245 1.68719 0.0188622       0.140805
+## R0          2.9411 0.48789 0.0054544       0.027875
+## infperiod   0.9909 0.18449 0.0020626       0.009989
+## 
+## 2. Quantiles for each variable:
+## 
+##               2.5%      25%      50%      75%    97.5%
+## beta        2.5032   2.7964   2.9512   3.1595   3.6210
+## gamma       0.7229   0.9132   1.0140   1.1655   1.5381
+## gamma1      0.4014   0.4410   0.4614   0.4805   0.5113
+## logPost   -70.5725 -68.0913 -66.8836 -65.9348 -63.7634
+## R0          2.1230   2.5953   2.9134   3.2148   3.9640
+## infperiod   0.6502   0.8580   0.9862   1.0950   1.3833</code></pre>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Question
+</div>
+<div class="panel-body">
+Notice that the posterior mean estimates are different to those obtained from the ABC-SMC algorithm that we used earlier. Why do you think this is so?
+</div>
+</div>
+<button id="displayTextunnamed-chunk-15" onclick="javascript:toggle('unnamed-chunk-15');">
+Show Answer
+</button>
+<div id="toggleTextunnamed-chunk-15" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Answer
+</div>
+<div class="panel-body">
+<p>It could be for various reasons. Firstly note that even though the underlying epidemic model is the same (both <span class="math inline">\(SIRR_1\)</span> models), in the PMCMC approach we have added a Poisson observation process. Therefore even though we are matching to all data points in the PMCMC algorithm, there is additional uncertainty around each data point, which may allow for a wider variety of simulations to have non-negligible weights compared to the ABC-SMC approach, which only accepts simulations that produce final epidemic sizes and dates of final removal within some small tolerance of the observed data. On the other hand, the ABC-SMC only matches to two summary statistics, rather than all data points, and so there might be some loss-of-information here.</p>
+<p>The important point to note is that in the ABC approaches there is some loss-of-information due to the reduction of the full data sets down to a lower dimensional set of summary statistics. On top of that there is the choice of tolerance which will also have an impact. On the other hand the PMCMC approach will target the true posterior, but the inclusion of a stochastic observation process changes the model, and thus the posterior will be different to the posterior for a model with a deterministic observation process.</p>
+Therefore one has to be careful when defining the model. In some cases adding some stochastic noise to the observations can make the system easier to fit, but unless the noise has some real-world interpretation, either as observation error, measurement error or model discrepancy, then in essence this additional noise is essentially another way of doing approximate Bayesian computation!
+</div>
+</div>
+</div>
+</div>
+<div id="predictive-posterior-distributions" class="section level2">
+<h2><span class="header-section-number">5.5</span> Predictive posterior distributions</h2>
+<p>We can also use the model to predict the future course of an outbreak (with uncertainties). The <code>SimBIID</code> packages provides a <code>predict()</code> method for <code>PMCMC</code> objects. To produce predictions we first fit a model to the current available data. This produces a set of posterior samples for each of the parameters. Then, for each set of posterior samples we can produce an estimate of the states of the system at the final observed time point. We do this by running a bootstrap particle filter over the observed time points for each parameter set, and then sampling a trajectory from the weighted set of particles. Hence we also obtain a set of posterior samples for the states of the system at the final observed time point.</p>
+<p>Once these have been obtained, we can use the corresponding posterior samples to seed a set of forward simulations into the future up to some pre-determined time point. All of this is done within the <code>predict()</code> function; we just need to pass it a suitable <code>PMCMC</code> object and a <code>tspan</code> argument for the time points we wish to predict to.</p>
+<p>As an example, let’s pretend that we are at day 3 of the outbreak, and let’s fit a model to the observed data up to that time point:</p>
+<div class="sourceCode" id="cb120"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb120-1" data-line-number="1"><span class="co">## run PMCMC algorithm</span></a>
+<a class="sourceLine" id="cb120-2" data-line-number="2">post &lt;-<span class="st"> </span><span class="kw">PMCMC</span>(</a>
+<a class="sourceLine" id="cb120-3" data-line-number="3">    <span class="dt">x =</span> flu_dat[<span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, ], </a>
+<a class="sourceLine" id="cb120-4" data-line-number="4">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb120-5" data-line-number="5">    <span class="dt">func =</span> model, </a>
+<a class="sourceLine" id="cb120-6" data-line-number="6">    <span class="dt">u =</span> iniStates, </a>
+<a class="sourceLine" id="cb120-7" data-line-number="7">    <span class="dt">npart =</span> <span class="dv">75</span>, </a>
+<a class="sourceLine" id="cb120-8" data-line-number="8">    <span class="dt">niter =</span> <span class="dv">10000</span>, </a>
+<a class="sourceLine" id="cb120-9" data-line-number="9">    <span class="dt">nprintsum =</span> <span class="dv">1000</span></a>
+<a class="sourceLine" id="cb120-10" data-line-number="10">)</a>
+<a class="sourceLine" id="cb120-11" data-line-number="11"><span class="co">## plot traces</span></a>
+<a class="sourceLine" id="cb120-12" data-line-number="12"><span class="kw">plot</span>(post, <span class="st">&quot;trace&quot;</span>)</a></code></pre></div>
+<p>(Output and trace plots suppressed here for brevity…)</p>
+<p>Now let’s predict forward up to day 14, based on the posterior distributions at day 3. To speed this up we will take 1,000 posterior samples. These can be obtained by using the <code>window()</code> function, to remove the first 2,000 iterations as burn-in, and then thin the remaining 8,000 samples by sub-sampling every 8<sup>th</sup> sample. The <code>predict()</code> function produces a <code>SimBIID_runs</code> object, which we can plot as before. Since <code>obsProcess</code> was specified in the model, the <code>predict()</code> function will also produce predictions that take the <strong>observation</strong> process into account. Here the observation process acts only on the <span class="math inline">\(R\)</span> class, and so this will produce an extra column called <code>Iobs</code> here, which contains predictions assuming a Poisson observation error around the simulated <code>R</code> counts (called <code>Robs</code> here which is specified in the <code>datNames</code> column of the original <code>obsProcess</code> object).</p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb121-1" data-line-number="1"><span class="co">## run predictions forward in time</span></a>
+<a class="sourceLine" id="cb121-2" data-line-number="2">post_pred &lt;-<span class="st"> </span><span class="kw">predict</span>(<span class="kw">window</span>(post, <span class="dt">start =</span> <span class="dv">2000</span>, <span class="dt">thin =</span> <span class="dv">8</span>), <span class="dt">tspan =</span> <span class="dv">4</span><span class="op">:</span><span class="dv">14</span>)</a>
+<a class="sourceLine" id="cb121-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb121-4" data-line-number="4"><span class="co">## plot predictions</span></a>
+<a class="sourceLine" id="cb121-5" data-line-number="5"><span class="kw">plot</span>(post_pred, <span class="dt">quant =</span> <span class="kw">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>))</a></code></pre></div>
+<p><img src="_main_files/figure-html/boot-pred1-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<p>The uncertainties up to the blue dashed line are derived from the bootstrap particle filter, whereas the uncertainties going forward are from direct simulations from the model. Since the <span class="math inline">\(R\)</span> curve can be compared directly to the observed data, we can add the observed data in as additional arguments to the <code>plot()</code> method here. We just have to add an additional <code>matchData</code> argument to tell the function which columns of the data to plot against which output from the model. In this case we pass the complete data to the function, just so that we can see how close the predictions (estimated from the model fitted at the dashed blue time point) were to the actual data. If you were doing this in real time you would only have the data up to the dashed blue time point.</p>
+<blockquote>
+<p>The <code>matchData = c(&quot;Robs = R&quot;)</code> below tells the <code>plot()</code> function to match the column called <code>Robs</code> in the data set to the <code>R</code> class from the simulations. It might be worth plotting the observations against the <code>Robs</code> output from the simulations also, since the simulated <code>Robs</code> curves include the <strong>observation process</strong>.</p>
+</blockquote>
+<div class="sourceCode" id="cb122"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb122-1" data-line-number="1"><span class="co">## plot predictions and add observed I curve</span></a>
+<a class="sourceLine" id="cb122-2" data-line-number="2"><span class="kw">plot</span>(post_pred, <span class="dt">quant =</span> <span class="kw">c</span>(<span class="fl">0.6</span>, <span class="fl">0.7</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>), </a>
+<a class="sourceLine" id="cb122-3" data-line-number="3">     <span class="dt">data =</span> flu_dat, <span class="dt">matchData =</span> <span class="kw">c</span>(<span class="st">&quot;Robs = R&quot;</span>, <span class="st">&quot;Robs = Robs&quot;</span>))</a></code></pre></div>
+<pre><code>## Warning: `cols` is now required.
+## Please use `cols = c(value)`</code></pre>
+<p><img src="_main_files/figure-html/boot-pred3-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Repeat the above procedure, refitting at days 5, 8 and 11. What happens to the uncertainties in the predictions? Why is this so?
+</div>
+</div>
+<button id="displayTextunnamed-chunk-17" onclick="javascript:toggle('unnamed-chunk-17');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-17" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<p>Note that I’ve suppressed the fitting and plotting code for brevity.</p>
+<pre><code>## Warning: `cols` is now required.
+## Please use `cols = c(value)`
+
+## Warning: `cols` is now required.
+## Please use `cols = c(value)`
+
+## Warning: `cols` is now required.
+## Please use `cols = c(value)`</code></pre>
+<p><img src="_main_files/figure-html/boot-solpred1-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<p><img src="_main_files/figure-html/boot-solpred2-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<p><img src="_main_files/figure-html/boot-solpred3-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<p>We can see that the uncertainties reduce as we fit to more data and as the epidemic begins to die out. We can also see that the actual observed outbreak is within the main uncertainty bounds for each of the model fits, as long as we take account for the observation process. Here the observation process acts mostly as a means of modelling <strong>underreporting</strong>, and hence the <strong>observed</strong> counts tend to be less than the <strong>simulated</strong> counts (shown here by adding the observed data line to both the <code>R</code> and <code>Robs</code> plots). We can also see that the uncertainties in the forecasts get smaller the more data we fit to and also as the epidemic begins to die out.</p>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+<h3> References</h3>
+<div id="refs" class="references">
+<div id="ref-andrieuetal:2010">
+<p>Andrieu, Christophe, Arnaud Doucet, and Roman Holenstein. 2010. “Particle Markov Chain Monte Carlo Methods.” <em>Journal of the Royal Statistical Society, Series B (Methodological)</em> 72 (3): 269–342.</p>
+</div>
+<div id="ref-funketal:2016">
+<p>Funk, Sebastian, Adam J. Kucharski, Anton Camacho, Rosalind M. Eggo, Laith Yakob &amp; Lawrence M. Murray, and W. John Edmunds. 2016. “Comparative Analysis of Dengue and Zika Outbreaks Reveals Differences by Setting and Virus.” <em>PLoS Neglected Tropical Diseases</em> 10 (12): e0005173.</p>
+</div>
+<div id="ref-gordonetal:1993">
+<p>Gordon, N. J., D. J. Salmond, and A. F. M. Smith. 1993. “Novel Approach to Nonlinear/Non-Gaussian Bayesian State Estimation.” <em>Radar and Signal Processing, IEE Proceedings F.</em> 140 (2): 107–13. <a href="https://doi.org/10.1049/ip-f-2.1993.0015" class="uri">https://doi.org/10.1049/ip-f-2.1993.0015</a>.</p>
+</div>
+<div id="ref-ionidesetal:2006">
+<p>Ionides, E.L., C. Bretó, and A.A. King. 2006. “Inference for Nonlinear Dynamical Systems.” <em>Proceedings of the National Academy of Sciences USA</em> 103: 18438–43.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="example-abakaliki-smallpox-outbreak.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="epilogue.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": null,
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": ["_main.pdf"],
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

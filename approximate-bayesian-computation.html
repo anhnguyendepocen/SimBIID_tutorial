@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>3 Approximate Bayesian Computation | Inference in infectious disease systems practicals</title>
+  <meta name="description" content="3 Approximate Bayesian Computation | Inference in infectious disease systems practicals" />
+  <meta name="generator" content="bookdown 0.19 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="3 Approximate Bayesian Computation | Inference in infectious disease systems practicals" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="3 Approximate Bayesian Computation | Inference in infectious disease systems practicals" />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="3 Approximate Bayesian Computation | Inference in infectious disease systems practicals" />
+  
+  <meta name="twitter:description" content="3 Approximate Bayesian Computation | Inference in infectious disease systems practicals" />
+  
+
+<meta name="author" content="TJ McKinley" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="set-up-simple-simulation-model.html"/>
+<link rel="next" href="example-abakaliki-smallpox-outbreak.html"/>
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<script language="javascript"> 
+    function toggle(id) {
+        var ele = document.getElementById("toggleText" + id);
+        var text = document.getElementById("displayText" + id);
+        var buttonText = text.innerHTML.replace("Show ", "");
+        buttonText = buttonText.replace("Hide ", "");
+        if(ele.style.display == "block") {
+            ele.style.display = "none";
+            text.innerHTML = "Show " + buttonText;
+        } else {
+            ele.style.display = "block";
+            text.innerHTML = "Hide " + buttonText;
+        }
+    } 
+</script>
+
+<script language="javascript">
+    function openCode(evt, codeName, id) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent" + id);
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks" + id);
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(codeName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+</script>
+
+<script language="javascript">
+    function hide(id){
+        document.getElementById(id).style.display = "none";
+    }
+</script>
+</script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a><ul>
+<li class="chapter" data-level="1.1" data-path="index.html"><a href="index.html#installation"><i class="fa fa-check"></i><b>1.1</b> Installation</a><ul>
+<li class="chapter" data-level="1.1.1" data-path="index.html"><a href="index.html#windows"><i class="fa fa-check"></i><b>1.1.1</b> Windows</a></li>
+<li class="chapter" data-level="1.1.2" data-path="index.html"><a href="index.html#mac"><i class="fa fa-check"></i><b>1.1.2</b> Mac</a></li>
+<li class="chapter" data-level="1.1.3" data-path="index.html"><a href="index.html#linux"><i class="fa fa-check"></i><b>1.1.3</b> Linux</a></li>
+<li class="chapter" data-level="1.1.4" data-path="index.html"><a href="index.html#install-package"><i class="fa fa-check"></i><b>1.1.4</b> Install package</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html"><i class="fa fa-check"></i><b>2</b> Set up simple simulation model</a><ul>
+<li class="chapter" data-level="2.1" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#case-study"><i class="fa fa-check"></i><b>2.1</b> Case Study</a></li>
+<li class="chapter" data-level="2.2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#set-up-simulation-model"><i class="fa fa-check"></i><b>2.2</b> Set up simulation model</a></li>
+<li class="chapter" data-level="2.3" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#using-tspan"><i class="fa fa-check"></i><b>2.3</b> Using <code>tspan</code></a></li>
+<li class="chapter" data-level="2.4" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#plotting-simulations"><i class="fa fa-check"></i><b>2.4</b> Plotting simulations</a></li>
+<li class="chapter" data-level="2.5" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#running-multiple-simulations"><i class="fa fa-check"></i><b>2.5</b> Running multiple simulations</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html"><i class="fa fa-check"></i><b>3</b> Approximate Bayesian Computation</a><ul>
+<li class="chapter" data-level="3.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-model"><i class="fa fa-check"></i><b>3.1</b> Simulation model</a></li>
+<li class="chapter" data-level="3.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#arguments-to-abcsmc-function"><i class="fa fa-check"></i><b>3.2</b> Arguments to <code>ABCSMC()</code> function</a><ul>
+<li class="chapter" data-level="3.2.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#summary-statistics"><i class="fa fa-check"></i><b>3.2.1</b> Summary statistics</a></li>
+<li class="chapter" data-level="3.2.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#priors"><i class="fa fa-check"></i><b>3.2.2</b> Prior distributions</a></li>
+<li class="chapter" data-level="3.2.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-function"><i class="fa fa-check"></i><b>3.2.3</b> Simulation function</a></li>
+<li class="chapter" data-level="3.2.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#inistates"><i class="fa fa-check"></i><b>3.2.4</b> Initial states</a></li>
+<li class="chapter" data-level="3.2.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#tolerances"><i class="fa fa-check"></i><b>3.2.5</b> Tolerances</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#running-abcsmc"><i class="fa fa-check"></i><b>3.3</b> Running <code>ABCSMC()</code></a></li>
+<li class="chapter" data-level="3.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#calculate-posterior-for-transformations-of-parameters"><i class="fa fa-check"></i><b>3.4</b> Calculate posterior for transformations of parameters</a></li>
+<li class="chapter" data-level="3.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#adding-additional-matching-criteria"><i class="fa fa-check"></i><b>3.5</b> Adding additional matching criteria</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html"><i class="fa fa-check"></i><b>4</b> Example: Abakaliki smallpox outbreak</a><ul>
+<li class="chapter" data-level="4.1" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#sir-model"><i class="fa fa-check"></i><b>4.1</b> SIR model</a></li>
+<li class="chapter" data-level="4.2" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#summary-statistics-1"><i class="fa fa-check"></i><b>4.2</b> Summary statistics</a></li>
+<li class="chapter" data-level="4.3" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#simulation-model-1"><i class="fa fa-check"></i><b>4.3</b> Simulation model</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="particle-mcmc.html"><a href="particle-mcmc.html"><i class="fa fa-check"></i><b>5</b> Particle MCMC</a><ul>
+<li class="chapter" data-level="5.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#arguments-for-pmcmc-function"><i class="fa fa-check"></i><b>5.1</b> Arguments for <code>PMCMC()</code> function</a><ul>
+<li class="chapter" data-level="5.1.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#data"><i class="fa fa-check"></i><b>5.1.1</b> Data</a></li>
+<li class="chapter" data-level="5.1.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#obsprocess"><i class="fa fa-check"></i><b>5.1.2</b> Observation process</a></li>
+</ul></li>
+<li class="chapter" data-level="5.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#running-the-pmcmc-algorithm"><i class="fa fa-check"></i><b>5.2</b> Running the PMCMC algorithm</a></li>
+<li class="chapter" data-level="5.3" data-path="particle-mcmc.html"><a href="particle-mcmc.html#optimising-the-number-of-particles"><i class="fa fa-check"></i><b>5.3</b> Optimising the number of particles</a></li>
+<li class="chapter" data-level="5.4" data-path="particle-mcmc.html"><a href="particle-mcmc.html#visualising-and-summarising-the-posterior-distributions"><i class="fa fa-check"></i><b>5.4</b> Visualising and summarising the posterior distributions</a></li>
+<li class="chapter" data-level="5.5" data-path="particle-mcmc.html"><a href="particle-mcmc.html#predictive-posterior-distributions"><i class="fa fa-check"></i><b>5.5</b> Predictive posterior distributions</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="epilogue.html"><a href="epilogue.html"><i class="fa fa-check"></i><b>6</b> Epilogue</a></li>
+<li class="chapter" data-level="7" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i><b>7</b> References</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Inference in infectious disease systems practicals</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="approximate-bayesian-computation" class="section level1">
+<h1><span class="header-section-number">3</span> Approximate Bayesian Computation</h1>
+<p>Here we will run the ABC-SMC routine of <span class="citation">Toni et al. (<a href="#ref-tonietal:2009">2009</a>)</span>. Firstly, load the <code>SimBIID</code> library:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co">## load library</span></a>
+<a class="sourceLine" id="cb23-2" data-line-number="2"><span class="kw">library</span>(SimBIID)</a></code></pre></div>
+<blockquote>
+<p><strong>Note: in all the following examples I have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.</strong></p>
+</blockquote>
+<div id="simulation-model" class="section level2">
+<h2><span class="header-section-number">3.1</span> Simulation model</h2>
+<p>In order to use the any ABC routine, we require a simulation model. Here we will use the approach described in the previous chapter, and specify a model using the <code>mparseRcpp()</code> function.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="co">## setup simulation model</span></a>
+<a class="sourceLine" id="cb24-2" data-line-number="2">transitions &lt;-<span class="st"> </span><span class="kw">c</span>(</a>
+<a class="sourceLine" id="cb24-3" data-line-number="3">    <span class="st">&quot;S -&gt; beta * S * I / (S + I + R + R1)  -&gt; I&quot;</span>, </a>
+<a class="sourceLine" id="cb24-4" data-line-number="4">    <span class="st">&quot;I -&gt; gamma * I -&gt; R&quot;</span>,</a>
+<a class="sourceLine" id="cb24-5" data-line-number="5">    <span class="st">&quot;R -&gt; gamma1 * R -&gt; R1&quot;</span></a>
+<a class="sourceLine" id="cb24-6" data-line-number="6">)</a>
+<a class="sourceLine" id="cb24-7" data-line-number="7">compartments &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;S&quot;</span>, <span class="st">&quot;I&quot;</span>, <span class="st">&quot;R&quot;</span>, <span class="st">&quot;R1&quot;</span>)</a>
+<a class="sourceLine" id="cb24-8" data-line-number="8">pars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;beta&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;gamma1&quot;</span>)</a>
+<a class="sourceLine" id="cb24-9" data-line-number="9">model &lt;-<span class="st"> </span><span class="kw">mparseRcpp</span>(</a>
+<a class="sourceLine" id="cb24-10" data-line-number="10">    <span class="dt">transitions =</span> transitions, </a>
+<a class="sourceLine" id="cb24-11" data-line-number="11">    <span class="dt">compartments =</span> compartments,</a>
+<a class="sourceLine" id="cb24-12" data-line-number="12">    <span class="dt">pars =</span> pars</a>
+<a class="sourceLine" id="cb24-13" data-line-number="13">)</a></code></pre></div>
+</div>
+<div id="arguments-to-abcsmc-function" class="section level2">
+<h2><span class="header-section-number">3.2</span> Arguments to <code>ABCSMC()</code> function</h2>
+<p>The ABC-SMC routine is coded in a function called <code>ABCSMC()</code>. If you look at the help file for the <code>ABCSMC()</code> function (e.g. <code>?ABCSMC</code>) you will see the main arguments, which are summarised below:</p>
+<ul>
+<li><code>x</code>: a named vector with entries containing the observed summary statistics to match to. Names must match to <code>tols</code> argument.</li>
+<li><code>priors</code>: a <code>data.frame</code> containing columns: <code>parnames</code>, <code>dist</code>, <code>p1</code> and <code>p2</code>, with number of rows equal to the number of parameters. The column <code>parname</code> simply gives names to each parameter for plotting and summarising. Each entry in the <code>dist</code> column must contain one of <code>c(&quot;unif&quot;, &quot;norm&quot;, &quot;gamma&quot;)</code>, and the corresponding <code>p1</code> and <code>p2</code> entries relate to the hyperparameters (lower and upper bounds in the uniform case; mean and standard deviation in the normal case; and shape and rate in the gamma case).</li>
+<li><code>func</code>: function that runs the simulator and checks whether the simulation matches the data. The first four arguments must be <code>pars</code>, <code>data</code>, <code>tols</code> and <code>u</code>. If the simulations do not match the data then the function must return an <code>NA</code>, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to <code>ncol(data)</code> and with entries in the same order as the columns of <code>data</code>.</li>
+<li><code>u</code>: a named vector of initial states.</li>
+<li><code>tols</code>: a vector or matrix of tolerances, with the number of rows defining the number of generations required, and columns defining the summary statistics to match to. If a vector, then the length determines the summary statistics. The columns/entries must match to those in <code>x</code>.</li>
+<li><code>ptols</code>: the proportion of simulated outcomes at each generation to use to derive adaptive tolerances.</li>
+<li><code>ngen</code>: the number of generations of ABC-SMC to run.</li>
+<li><code>npart</code>: an integer specifying the number of particles.</li>
+</ul>
+<div id="summary-statistics" class="section level3">
+<h3><span class="header-section-number">3.2.1</span> Summary statistics</h3>
+<p>The first argument to <code>ABCSMC()</code> must be either an <code>ABCSMC</code> object (we will come to this later), or a named <code>vector</code> with entries containing the observed summary statistics to match to. The data here are time-series counts of <strong><em>bed-rest </em></strong> and <strong><em>convalescence</em></strong> events. A very simple option would be to match to:</p>
+<ul>
+<li>final epidemic size (i.e. total number of removals across the time course of the epidemic), and</li>
+<li>time of final removal (in this case when the epidemic process ceased).</li>
+</ul>
+<p>Although simple, these two measures serve to give us some information on both the <strong>length</strong> and <strong>magnitude</strong> of the epidemic, and should contain at least some useful information about the parameters. In this case the final removal time is 15 days and the final epidemic size is 512 individuals. Let’s create this data object:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co">## create vector of summary statistics</span></a>
+<a class="sourceLine" id="cb25-2" data-line-number="2">sumStat &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dt">finalsize =</span> <span class="dv">512</span>, <span class="dt">finaltime =</span> <span class="dv">15</span>)</a>
+<a class="sourceLine" id="cb25-3" data-line-number="3">sumStat</a></code></pre></div>
+<pre><code>## finalsize finaltime 
+##       512        15</code></pre>
+</div>
+<div id="priors" class="section level3">
+<h3><span class="header-section-number">3.2.2</span> Prior distributions</h3>
+<p>The second argument to the <code>ABCSMC()</code> function must be a <code>data.frame</code> containing information about the prior distributions for the parameters. Here we will let <span class="math inline">\(\beta \sim U(0, 5)\)</span>, <span class="math inline">\(\gamma \sim U(0, 5)\)</span> and <span class="math inline">\(\gamma_1 \sim U(0, 5)\)</span>. We can specify this as follows:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co">## set priors</span></a>
+<a class="sourceLine" id="cb27-2" data-line-number="2">priors &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">parnames =</span> <span class="kw">c</span>(<span class="st">&quot;beta&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;gamma1&quot;</span>), </a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">                     <span class="dt">dist =</span> <span class="kw">rep</span>(<span class="st">&quot;unif&quot;</span>, <span class="dv">3</span>), </a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">                     <span class="dt">stringsAsFactors =</span> F)</a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">priors<span class="op">$</span>p1 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb27-6" data-line-number="6">priors<span class="op">$</span>p2 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb27-7" data-line-number="7">priors</a></code></pre></div>
+<pre><code>##   parnames dist p1 p2
+## 1     beta unif  0  5
+## 2    gamma unif  0  5
+## 3   gamma1 unif  0  5</code></pre>
+<p>Here the first column corresponds to the names of the parameters, the second to the type of prior distribution (<code>&quot;unif&quot;</code>, <code>&quot;gamma&quot;</code> or <code>&quot;norm&quot;</code>), and the final two columns to the hyperparameters (upper and lower limits for <code>&quot;unif&quot;</code>; shape and rate for <code>&quot;gamma&quot;</code>; or mean and standard deviation for <code>&quot;norm&quot;</code>).</p>
+</div>
+<div id="simulation-function" class="section level3">
+<h3><span class="header-section-number">3.2.3</span> Simulation function</h3>
+<p>The third argument to <code>ABCSMC()</code> is a function that runs the simulator and checks whether the simulation matches the data. The first four arguments to this function must be <code>pars</code>, <code>data</code>, <code>tols</code> and <code>u</code> (but you can pass more arguments in if required—see below). Within the function:</p>
+<ul>
+<li><code>pars</code>: is a <em>vector</em> of parameters (the order must match the order of the <code>priors</code> argument to the <code>ABCSMC()</code> function);</li>
+<li><code>data</code>: a <em>vector</em> of data points to match to (must match the order of the <code>x</code> argument to the <code>ABCSMC()</code> function);</li>
+<li><code>tols</code>: a <em>vector</em> of tolerances (must match the order of <code>data</code>);</li>
+<li><code>u</code>: a <em>vector</em> of initial states (must match order of the <code>u</code> argument to the <code>ABCSMC()</code> function).</li>
+</ul>
+<blockquote>
+<p><strong>Please note: there is no internal check on you getting these orders correct. It is up to you to be careful when setting up this function!</strong></p>
+</blockquote>
+<p>If the simulations do not match the data then the function must return an <code>NA</code>, else it must returns a vector of simulated summary measures. In this latter case the output from the function must be a vector with length equal to <code>length(data)</code> and with entries in the same order as <code>data</code>. It is possible to add further arguments to this function, as long as they appear after <code>pars</code>, <code>data</code>, <code>tols</code> and <code>u</code>. For example, in our case we are going to pass our simulation model in as an additional argument called <code>model</code> (see below).</p>
+<blockquote>
+<p><strong>Pre-compilation</strong>: For speed, the simulation models in <code>SimBIID</code> are coded using C/C++ (specifically through the use of the wonderful <a href="https://cran.r-project.org/web/packages/Rcpp/index.html"><code>Rcpp</code></a> package). This requires that the code is <em>compiled</em> into a binary file before running. The <code>run()</code> function does this automatically. However, there is an overhead attached with this, and since the ABC-SMC function needs to run the model lots of times, if we used the <code>run()</code> function then we would have to compile the model lots of times, which is very costly.</p>
+<p>Instead, we will use a function in <code>SimBIID</code> called <code>compileRcpp()</code>, which pre-compiles the model into an R function that we can call within our simulation code without having to re-compile the model each time. Hence, to speed things up here we will not use the <code>run()</code> function directly, rather we will create the model using <code>mparseRcpp()</code>, and then compile it using <code>compileRcpp()</code>, before passing the compiled model to the <code>ABCSMC()</code> function.</p>
+</blockquote>
+<p>Hence, to compile the model we can run:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1">model &lt;-<span class="st"> </span><span class="kw">compileRcpp</span>(model)</a>
+<a class="sourceLine" id="cb29-2" data-line-number="2">model</a></code></pre></div>
+<pre><code>## function (pars, tstart, tstop, u) 
+## .Call(&lt;pointer: 0x7f0ef60ede50&gt;, pars, tstart, tstop, u)</code></pre>
+<p>You can see that the compiled model is an R <code>function</code> that takes four arguments, <code>pars</code>, <code>tstart</code>, <code>tstop</code> and <code>u</code>. Convenient eh?</p>
+<p>Now we generate a function that runs the simulations, extracts the relevant summary statistics, and returns the correct output. Notice that we pass an additional argument <code>model</code> that contains our simulation function generated above.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co">## set up function to perform simulation and check matching</span></a>
+<a class="sourceLine" id="cb31-2" data-line-number="2">simFlu &lt;-<span class="st"> </span><span class="cf">function</span>(pars, data, tols, u, model) {</a>
+<a class="sourceLine" id="cb31-3" data-line-number="3">    </a>
+<a class="sourceLine" id="cb31-4" data-line-number="4">    <span class="co">## run model</span></a>
+<a class="sourceLine" id="cb31-5" data-line-number="5">    sims &lt;-<span class="st"> </span><span class="kw">model</span>(pars, <span class="dv">0</span>, data[<span class="dv">2</span>] <span class="op">+</span><span class="st"> </span>tols[<span class="dv">2</span>], u)</a>
+<a class="sourceLine" id="cb31-6" data-line-number="6">    </a>
+<a class="sourceLine" id="cb31-7" data-line-number="7">    <span class="co">## &#39;sims&#39; is a vector of outputs of the form:</span></a>
+<a class="sourceLine" id="cb31-8" data-line-number="8">    <span class="co">## completed (1/0), t, S, I, R, R1</span></a>
+<a class="sourceLine" id="cb31-9" data-line-number="9">    <span class="cf">if</span>(sims[<span class="dv">1</span>] <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</a>
+<a class="sourceLine" id="cb31-10" data-line-number="10">        <span class="co">## if epidemic still going at </span></a>
+<a class="sourceLine" id="cb31-11" data-line-number="11">        <span class="co">## time = finaltime + tol, then reject</span></a>
+<a class="sourceLine" id="cb31-12" data-line-number="12">        <span class="kw">return</span>(<span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb31-13" data-line-number="13">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb31-14" data-line-number="14">        <span class="co">## extract finaltime and finalsize</span></a>
+<a class="sourceLine" id="cb31-15" data-line-number="15">        finaltime &lt;-<span class="st"> </span>sims[<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb31-16" data-line-number="16">        finalsize &lt;-<span class="st"> </span>sims[<span class="dv">6</span>]</a>
+<a class="sourceLine" id="cb31-17" data-line-number="17">    }</a>
+<a class="sourceLine" id="cb31-18" data-line-number="18">    </a>
+<a class="sourceLine" id="cb31-19" data-line-number="19">    <span class="co">## return vector if match, else return NA</span></a>
+<a class="sourceLine" id="cb31-20" data-line-number="20">    <span class="cf">if</span>(<span class="kw">all</span>(<span class="kw">abs</span>(<span class="kw">c</span>(finalsize, finaltime) <span class="op">-</span><span class="st"> </span>data) <span class="op">&lt;=</span><span class="st"> </span>tols)){</a>
+<a class="sourceLine" id="cb31-21" data-line-number="21">        <span class="kw">return</span>(<span class="kw">c</span>(finalsize, finaltime))</a>
+<a class="sourceLine" id="cb31-22" data-line-number="22">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb31-23" data-line-number="23">        <span class="kw">return</span>(<span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb31-24" data-line-number="24">    }</a>
+<a class="sourceLine" id="cb31-25" data-line-number="25">}</a></code></pre></div>
+<blockquote>
+<p><strong>Note</strong>: You can also use you own simulation code in this function, as long as you adhere to these rules, you do not have to use <code>mparseRcpp()</code> (you could use the <code>SimInf</code> package here for example).</p>
+</blockquote>
+<p>The <code>simFlu</code> function we have made therefore returns an <code>NA</code> if the simulations do not match the summary statistics, or a vector of simulated summary statistics if it does.</p>
+</div>
+<div id="inistates" class="section level3">
+<h3><span class="header-section-number">3.2.4</span> Initial states</h3>
+<p>Next we need to specify the initial states of the system (as a named <code>vector</code>):</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co">## define initial states</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2">iniStates &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dt">S =</span> <span class="dv">762</span>, <span class="dt">I =</span> <span class="dv">1</span>, <span class="dt">R =</span> <span class="dv">0</span>, <span class="dt">R1 =</span> <span class="dv">0</span>)</a></code></pre></div>
+</div>
+<div id="tolerances" class="section level3">
+<h3><span class="header-section-number">3.2.5</span> Tolerances</h3>
+<p>We can specify the tolerances in one of two ways:</p>
+<ul>
+<li>either as a <code>matrix</code> of tolerances to match to (through the <code>tols</code> argument). Note that these must be decreasing over each generation of the ABC-SMC algorithm.</li>
+<li>Alternatively, we can specify the proportion of simulated outcomes at each generation to use to derive adaptive tolerances (through the <code>ptols</code> argument). For example, if <code>ptols = 0.5</code>, then we choose tolerances at the <span class="math inline">\(t\)</span><sup>th</sup> generation such that we would have accepted 50% of the simulations at the <span class="math inline">\((t - 1)\)</span><sup>th</sup> generation. Note that if we wish to use this latter approach, then we will need to give the algorithm some initial tolerances for generation 1 through the <code>tols</code> argument.</li>
+</ul>
+<blockquote>
+<p><strong>Note</strong>: the names and order of the tolerances must match the <code>x</code> argument.</p>
+</blockquote>
+<p>We will use the second approach, so need to specify a set of tolerances for the first generation only:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co">## set tolerances</span></a>
+<a class="sourceLine" id="cb33-2" data-line-number="2">tols &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dt">finalsize =</span> <span class="dv">50</span>, <span class="dt">finaltime =</span> <span class="dv">50</span>)</a></code></pre></div>
+</div>
+</div>
+<div id="running-abcsmc" class="section level2">
+<h2><span class="header-section-number">3.3</span> Running <code>ABCSMC()</code></h2>
+<p>Now let’s run the routine for <code>ngen = 4</code> generations of ABC, with <code>ptols = 0.2</code> using <code>npart = 50</code> particles. Notice that we can pass the additional arguments that <code>simFlu()</code> needs (<code>model</code> in this case) as additional arguments passed to <code>ABCSMC()</code>:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co">## run ABC-SMC algorithm</span></a>
+<a class="sourceLine" id="cb34-2" data-line-number="2">post &lt;-<span class="st"> </span><span class="kw">ABCSMC</span>(</a>
+<a class="sourceLine" id="cb34-3" data-line-number="3">    <span class="dt">x =</span> sumStat, </a>
+<a class="sourceLine" id="cb34-4" data-line-number="4">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb34-5" data-line-number="5">    <span class="dt">func =</span> simFlu, </a>
+<a class="sourceLine" id="cb34-6" data-line-number="6">    <span class="dt">u =</span> iniStates, </a>
+<a class="sourceLine" id="cb34-7" data-line-number="7">    <span class="dt">tols =</span> tols, </a>
+<a class="sourceLine" id="cb34-8" data-line-number="8">    <span class="dt">ptols =</span> <span class="fl">0.2</span>,</a>
+<a class="sourceLine" id="cb34-9" data-line-number="9">    <span class="dt">ngen =</span> <span class="dv">4</span>,</a>
+<a class="sourceLine" id="cb34-10" data-line-number="10">    <span class="dt">npart =</span> <span class="dv">50</span>,</a>
+<a class="sourceLine" id="cb34-11" data-line-number="11">    <span class="dt">model =</span> model</a>
+<a class="sourceLine" id="cb34-12" data-line-number="12">)</a></code></pre></div>
+<pre><code>## Generation 1, accrate = 0.021, time = 0.97 secs</code></pre>
+<pre><code>## Generation 2, accrate = 0.016, time = 4.7 secs</code></pre>
+<pre><code>## Generation 3, accrate = 0.0034, time = 16 secs</code></pre>
+<pre><code>## Generation 4, accrate = 0.00072, time = 74 secs</code></pre>
+<pre><code>## 
+## Final run time = 96 secs</code></pre>
+<blockquote>
+<p><strong>Note</strong>: these algorithms are computationally intensive, so if you can spare the processing power, it’s often good to set <code>parallel = T</code> to use parallel processing. However, depending on the model and your architecture, it’s not always faster, so you might need to use your judgement. Windows users commiserate: your architecture doesn’t support the <code>mclapply()</code> function (from the <code>parallel</code> package) so you’ll always have to run in serial I’m afraid…</p>
+</blockquote>
+<p>We can plot the approximate posterior distributions over the generations as follows:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">## plot approximate posteriors</span></a>
+<a class="sourceLine" id="cb40-2" data-line-number="2"><span class="kw">plot</span>(post)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<p>We can plot the simulated summary statistics from the accepted particles at each generation as:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="kw">plot</span>(post, <span class="dt">type =</span> <span class="st">&quot;output&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot1-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<p>Given the speed of the simulations, let’s try running for a few more generations. We can pass the current <code>ABCSMC</code> object (<code>post</code> here) back into the <code>ABCSMC()</code> function and run for a few more generations:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">## run for a few more generations</span></a>
+<a class="sourceLine" id="cb42-2" data-line-number="2">post &lt;-<span class="st"> </span><span class="kw">ABCSMC</span>(<span class="dt">x =</span> post, <span class="dt">ptols =</span> <span class="fl">0.2</span>, <span class="dt">ngen =</span> <span class="dv">3</span>, <span class="dt">parallel =</span> T)</a></code></pre></div>
+<pre><code>## Number of cores: 24</code></pre>
+<pre><code>## Generation 5, accrate = 0.00016, time = 47 secs</code></pre>
+<pre><code>## Generation 6, accrate = 5.7e-05, time = 89 secs</code></pre>
+<pre><code>## Generation 7, accrate = 1e-05, time = 620 secs</code></pre>
+<pre><code>## 
+## Final run time = 760 secs</code></pre>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" data-line-number="1"><span class="co">## plot approximate posteriors and simulated</span></a>
+<a class="sourceLine" id="cb48-2" data-line-number="2"><span class="co">## summary statistics</span></a>
+<a class="sourceLine" id="cb48-3" data-line-number="3"><span class="kw">plot</span>(post)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot2-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="kw">plot</span>(post, <span class="st">&quot;output&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot2-2.svg" width="80%" style="display: block; margin: auto;" /></p>
+<p>Notice how the approximate posteriors are tightening up as we require to match more precisely. Notice also that the acceptance rate of each generation of ABC-SMC drops as the tolerances decrease. In fact we can see this more clearly if we plot just the first and final generation. Fortunately, we can choose which generations to plot using the <code>gen</code> argument to <code>plot()</code> e.g.</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb50-1" data-line-number="1"><span class="co">## plot approximate posteriors</span></a>
+<a class="sourceLine" id="cb50-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="dt">gen =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">7</span>))</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot3-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co">## plot accepted outputs</span></a>
+<a class="sourceLine" id="cb51-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="st">&quot;output&quot;</span>, <span class="dt">gen =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">7</span>))</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot3-2.svg" width="80%" style="display: block; margin: auto;" /></p>
+<p>We can also produce joint density plots (if the <code>GGally</code> package is installed):</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb52-1" data-line-number="1"><span class="co">## joint distributions</span></a>
+<a class="sourceLine" id="cb52-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="dt">gen =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">7</span>), <span class="dt">joint =</span> T)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot4-1.svg" width="60%" style="display: block; margin: auto;" /></p>
+<p>A call to <code>summary()</code> produces weighted estimates for the posterior means and standard deviations for the parameters in the final generation, along with an estimate of the <strong>effective sample size</strong>:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="kw">summary</span>(post)</a></code></pre></div>
+<pre><code>##            Mean        SD      ESS
+## beta   2.905822 0.7905814 33.51667
+## gamma  1.714179 0.4438832 33.51667
+## gamma1 2.101349 1.3339654 33.51667</code></pre>
+</div>
+<div id="calculate-posterior-for-transformations-of-parameters" class="section level2">
+<h2><span class="header-section-number">3.4</span> Calculate posterior for transformations of parameters</h2>
+<p>We might also want to calculate posterior distributions for transformations of the parameters. This can be done by specifying a <code>transfunc</code> argument to the <code>summary()</code> method (this function must return a <code>data.frame</code> object, and the arguments to the function must match to names of the parameters used in the transformation). For example, as discussed in the lecture, if we have <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\gamma\)</span>, then we can also calculate the marginal posterior distribution for <span class="math inline">\(R_0\)</span> (here defined as <span class="math inline">\(R_0 = \frac{\beta}{\gamma}\)</span>), as well as, let’s say, the length of the infectious period. Hence we must define a function with arguments <code>beta</code> and <code>gamma</code> (which match to parameters in the model), and returns a <code>data.frame</code> of transformed parameters:</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co">## function to calculate R0 and infectious period</span></a>
+<a class="sourceLine" id="cb55-2" data-line-number="2">R0fn &lt;-<span class="st"> </span><span class="cf">function</span>(beta, gamma) {</a>
+<a class="sourceLine" id="cb55-3" data-line-number="3">    <span class="kw">data.frame</span>(<span class="dt">R0 =</span> beta <span class="op">/</span><span class="st"> </span>gamma, <span class="dt">infperiod =</span> <span class="dv">1</span> <span class="op">/</span><span class="st"> </span>gamma)</a>
+<a class="sourceLine" id="cb55-4" data-line-number="4">}</a>
+<a class="sourceLine" id="cb55-5" data-line-number="5"><span class="kw">summary</span>(post, <span class="dt">transfunc =</span> R0fn)</a></code></pre></div>
+<pre><code>##                Mean        SD      ESS
+## beta      2.9058222 0.7905814 33.51667
+## gamma     1.7141793 0.4438832 33.51667
+## gamma1    2.1013491 1.3339654 33.51667
+## R0        1.6911942 0.1081999 33.51667
+## infperiod 0.6193271 0.1458871 33.51667</code></pre>
+<p>We can plot distributions for transformed variables in a similar way:</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co">## plot distribution for R0</span></a>
+<a class="sourceLine" id="cb57-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="dt">transfunc =</span> R0fn, <span class="dt">gen =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">7</span>))</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot5-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<p>Note that we can also ask various probabilistic questions of these distributions, since we are using a Bayesian framework. For example, what is the probability that <span class="math inline">\(R_0\)</span> is greater than one? A Monte Carlo estimate of this can be produced simply by counting the proportion of the posterior samples for <span class="math inline">\(R_0\)</span> that lie above one. (<strong>Note</strong>: this would be slightly <em>biased</em>, since we actually have unequal weights for these samples. However, we can use our transformation function above to generate a weighted estimate as below.)</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb58-1" data-line-number="1"><span class="co">## function to calculate whether R0 &gt; 1</span></a>
+<a class="sourceLine" id="cb58-2" data-line-number="2">R0gt &lt;-<span class="st"> </span><span class="cf">function</span>(beta, gamma) {</a>
+<a class="sourceLine" id="cb58-3" data-line-number="3">    <span class="kw">data.frame</span>(<span class="dt">R0gt =</span> <span class="kw">as.numeric</span>((beta <span class="op">/</span><span class="st"> </span>gamma) <span class="op">&gt;</span><span class="st"> </span><span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb58-4" data-line-number="4">}</a>
+<a class="sourceLine" id="cb58-5" data-line-number="5"><span class="kw">summary</span>(post, <span class="dt">transfunc =</span> R0gt)</a></code></pre></div>
+<pre><code>##            Mean           SD      ESS
+## beta   2.905822 7.905814e-01 33.51667
+## gamma  1.714179 4.438832e-01 33.51667
+## gamma1 2.101349 1.333965e+00 33.51667
+## R0gt   1.000000 1.110223e-16 33.51667</code></pre>
+</div>
+<div id="adding-additional-matching-criteria" class="section level2">
+<h2><span class="header-section-number">3.5</span> Adding additional matching criteria</h2>
+<p>Matching to final epidemic size and the date of the final removal only is quite crude. We could also incorporate information regarding the observed <span class="math inline">\(R\)</span> curves. One option would be to generate some summary measure of distance between the simulated and observed curves, something like a sum-of-squared differences e.g.
+<span class="math display">\[
+    S_R = \sum_{t = 1}^T \left(R_t - R^\prime_t\right)^2,
+\]</span>
+where <span class="math inline">\(R_t\)</span> is the <strong>observed</strong> counts at time <span class="math inline">\(t\)</span>, and <span class="math inline">\(R^\prime_t\)</span> are the corresponding <strong>simulated</strong> counts at time <span class="math inline">\(t\)</span>, and <span class="math inline">\(T\)</span> is the total number of time points. Therefore if the simulated time-series matches the data <em>exactly</em> then <span class="math inline">\(S_R = 0\)</span>; with large values of <span class="math inline">\(S_R\)</span> corresponding to poor matches between the simulated and observed counts.</p>
+<p>To calculate <span class="math inline">\(S_R\)</span>, we have to re-compile the model with the <code>tspan</code> option turned on.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb60-1" data-line-number="1"><span class="co">## specify model</span></a>
+<a class="sourceLine" id="cb60-2" data-line-number="2">model &lt;-<span class="st"> </span><span class="kw">mparseRcpp</span>(</a>
+<a class="sourceLine" id="cb60-3" data-line-number="3">    <span class="dt">transitions =</span> transitions, </a>
+<a class="sourceLine" id="cb60-4" data-line-number="4">    <span class="dt">compartments =</span> compartments,</a>
+<a class="sourceLine" id="cb60-5" data-line-number="5">    <span class="dt">pars =</span> pars,</a>
+<a class="sourceLine" id="cb60-6" data-line-number="6">    <span class="dt">tspan =</span> T</a>
+<a class="sourceLine" id="cb60-7" data-line-number="7">)</a>
+<a class="sourceLine" id="cb60-8" data-line-number="8"><span class="co">## compile into R function</span></a>
+<a class="sourceLine" id="cb60-9" data-line-number="9">model &lt;-<span class="st"> </span><span class="kw">compileRcpp</span>(model)</a>
+<a class="sourceLine" id="cb60-10" data-line-number="10">model</a></code></pre></div>
+<pre><code>## function (pars, tstart, tstop, u, tspan) 
+## .Call(&lt;pointer: 0x7f0ef6074c50&gt;, pars, tstart, tstop, u, tspan)</code></pre>
+<p>You can now see that the new function has an additional <code>tspan</code> argument, which corresponds to a vector of times that we wish to return the states of the system. We therefore also have to pass a <code>tspan</code> argument to our <code>simFlu</code> function. In addition, we will also need to pass the observed time-series counts to this function (which we call <code>R</code> here).</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb62-1" data-line-number="1"><span class="co">## set up function to perform simulation and check matching</span></a>
+<a class="sourceLine" id="cb62-2" data-line-number="2">simFlu &lt;-<span class="st"> </span><span class="cf">function</span>(pars, data, tols, u, model, tspan, R) {</a>
+<a class="sourceLine" id="cb62-3" data-line-number="3">    </a>
+<a class="sourceLine" id="cb62-4" data-line-number="4">    <span class="co">## run model</span></a>
+<a class="sourceLine" id="cb62-5" data-line-number="5">    sims &lt;-<span class="st"> </span><span class="kw">model</span>(pars, <span class="dv">0</span>, data[<span class="dv">2</span>] <span class="op">+</span><span class="st"> </span>tols[<span class="dv">2</span>], u, tspan)</a>
+<a class="sourceLine" id="cb62-6" data-line-number="6">    </a>
+<a class="sourceLine" id="cb62-7" data-line-number="7">    <span class="co">## &#39;sims&#39; is now a list, with the first element a vector</span></a>
+<a class="sourceLine" id="cb62-8" data-line-number="8">    <span class="co">## of the form: completed (1/0), t, S, I, R, R1</span></a>
+<a class="sourceLine" id="cb62-9" data-line-number="9">    <span class="co">## and the second element is a matrix containing the </span></a>
+<a class="sourceLine" id="cb62-10" data-line-number="10">    <span class="co">## time-series counts</span></a>
+<a class="sourceLine" id="cb62-11" data-line-number="11">    simSum &lt;-<span class="st"> </span>sims[[<span class="dv">1</span>]]</a>
+<a class="sourceLine" id="cb62-12" data-line-number="12">    counts &lt;-<span class="st"> </span>sims[[<span class="dv">2</span>]]</a>
+<a class="sourceLine" id="cb62-13" data-line-number="13">    <span class="cf">if</span>(simSum[<span class="dv">1</span>] <span class="op">==</span><span class="st"> </span><span class="dv">0</span>) {</a>
+<a class="sourceLine" id="cb62-14" data-line-number="14">        <span class="co">## if epidemic still going at </span></a>
+<a class="sourceLine" id="cb62-15" data-line-number="15">        <span class="co">## time = finaltime + tol, then reject</span></a>
+<a class="sourceLine" id="cb62-16" data-line-number="16">        <span class="kw">return</span>(<span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb62-17" data-line-number="17">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb62-18" data-line-number="18">        <span class="co">## extract finaltime and finalsize</span></a>
+<a class="sourceLine" id="cb62-19" data-line-number="19">        finaltime &lt;-<span class="st"> </span>simSum[<span class="dv">2</span>]</a>
+<a class="sourceLine" id="cb62-20" data-line-number="20">        finalsize &lt;-<span class="st"> </span>simSum[<span class="dv">6</span>]</a>
+<a class="sourceLine" id="cb62-21" data-line-number="21">        </a>
+<a class="sourceLine" id="cb62-22" data-line-number="22">        <span class="co">## calculate sum-of-squared distances of</span></a>
+<a class="sourceLine" id="cb62-23" data-line-number="23">        <span class="co">## simulations from observations</span></a>
+<a class="sourceLine" id="cb62-24" data-line-number="24">        SR &lt;-<span class="st"> </span><span class="kw">sum</span>((R <span class="op">-</span><span class="st"> </span>counts[, <span class="dv">4</span>])<span class="op">^</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb62-25" data-line-number="25">    }</a>
+<a class="sourceLine" id="cb62-26" data-line-number="26">    </a>
+<a class="sourceLine" id="cb62-27" data-line-number="27">    <span class="co">## return vector if match, else return NA</span></a>
+<a class="sourceLine" id="cb62-28" data-line-number="28">    <span class="cf">if</span>(<span class="kw">all</span>(<span class="kw">abs</span>(<span class="kw">c</span>(finalsize, finaltime, SR) <span class="op">-</span><span class="st"> </span>data) <span class="op">&lt;=</span><span class="st"> </span>tols)){</a>
+<a class="sourceLine" id="cb62-29" data-line-number="29">        <span class="kw">return</span>(<span class="kw">c</span>(finalsize, finaltime, SR))</a>
+<a class="sourceLine" id="cb62-30" data-line-number="30">    } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb62-31" data-line-number="31">        <span class="kw">return</span>(<span class="ot">NA</span>)</a>
+<a class="sourceLine" id="cb62-32" data-line-number="32">    }</a>
+<a class="sourceLine" id="cb62-33" data-line-number="33">}</a></code></pre></div>
+<p>To create some initial tolerances, let’s append an initial value for <code>SR</code> to our original <code>tols</code> object:</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" data-line-number="1"><span class="co">## set up new set of tolerances</span></a>
+<a class="sourceLine" id="cb63-2" data-line-number="2">tols &lt;-<span class="st"> </span><span class="kw">c</span>(tols, <span class="dt">SR =</span> <span class="fl">1e6</span>)</a></code></pre></div>
+<p>In practice, we cannot derive a measure of <span class="math inline">\(S_R\)</span> from the <strong>observed</strong> data alone, but we know that if the simulations match the observed data exactly, then <span class="math inline">\(S_R = 0\)</span>, so we use this as our target, and append to the <code>sumStat</code> vector accordingly:</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb64-1" data-line-number="1"><span class="co">## set up data to match to</span></a>
+<a class="sourceLine" id="cb64-2" data-line-number="2">sumStat &lt;-<span class="st"> </span><span class="kw">c</span>(sumStat, <span class="dt">SR =</span> <span class="dv">0</span>)</a></code></pre></div>
+<p>Now we can run our routine again (notice the final row below contains the additional arguments we now need for <code>simFlu()</code>):</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb65-1" data-line-number="1"><span class="co">## run ABC-SMC algorithm</span></a>
+<a class="sourceLine" id="cb65-2" data-line-number="2">post &lt;-<span class="st"> </span><span class="kw">ABCSMC</span>(</a>
+<a class="sourceLine" id="cb65-3" data-line-number="3">    <span class="dt">x =</span> sumStat, </a>
+<a class="sourceLine" id="cb65-4" data-line-number="4">    <span class="dt">priors =</span> priors, </a>
+<a class="sourceLine" id="cb65-5" data-line-number="5">    <span class="dt">func =</span> simFlu, </a>
+<a class="sourceLine" id="cb65-6" data-line-number="6">    <span class="dt">u =</span> iniStates, </a>
+<a class="sourceLine" id="cb65-7" data-line-number="7">    <span class="dt">npart =</span> <span class="dv">50</span>,</a>
+<a class="sourceLine" id="cb65-8" data-line-number="8">    <span class="dt">tols =</span> tols,</a>
+<a class="sourceLine" id="cb65-9" data-line-number="9">    <span class="dt">ptols =</span> <span class="fl">0.2</span>,</a>
+<a class="sourceLine" id="cb65-10" data-line-number="10">    <span class="dt">ngen =</span> <span class="dv">3</span>, </a>
+<a class="sourceLine" id="cb65-11" data-line-number="11">    <span class="dt">parallel =</span> T,</a>
+<a class="sourceLine" id="cb65-12" data-line-number="12">    <span class="dt">model =</span> model, <span class="dt">tspan =</span> flu<span class="op">$</span>day, <span class="dt">R =</span> flu<span class="op">$</span>in_bed</a>
+<a class="sourceLine" id="cb65-13" data-line-number="13">)</a></code></pre></div>
+<pre><code>## Number of cores: 24</code></pre>
+<pre><code>## Generation 1, accrate = 0.022, time = 0.38 secs</code></pre>
+<pre><code>## Generation 2, accrate = 0.022, time = 0.66 secs</code></pre>
+<pre><code>## Generation 3, accrate = 0.0066, time = 2 secs</code></pre>
+<pre><code>## 
+## Final run time = 3.1 secs</code></pre>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb71-1" data-line-number="1"><span class="co">## plot approximate posteriors</span></a>
+<a class="sourceLine" id="cb71-2" data-line-number="2"><span class="kw">plot</span>(post)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot6-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb72-1" data-line-number="1"><span class="co">## plot simulated summary measures</span></a>
+<a class="sourceLine" id="cb72-2" data-line-number="2"><span class="kw">plot</span>(post, <span class="st">&quot;output&quot;</span>)</a></code></pre></div>
+<p><img src="_main_files/figure-html/abc-plot61-1.svg" width="80%" style="display: block; margin: auto;" /></p>
+<p>Notice that the <span class="math inline">\(S_R\)</span> metric doesn’t get very close to 0 here. This is because the metric is a <strong>one-sided</strong> metric and so we always expect some variability away from zero. Due to the stochastic nature of the model, to get a metric close to zero we would have to match almost all time points exactly, which would be very computationally expensive. Hence we use this to tweak the outputs, but most of the variability is being constrained by the <code>finaltime</code> and <code>finalsize</code> metrics here. However, we can see that the addition of the <span class="math inline">\(S_R\)</span> metric seems to tighten up the posterior for <span class="math inline">\(\gamma_1\)</span>. Why is this do you think? Ideally you would want to run for more generations to tighten up each of these outputs.</p>
+<blockquote>
+<p><strong>Remember: here we have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.</strong></p>
+</blockquote>
+
+</div>
+</div>
+<h3> References</h3>
+<div id="refs" class="references">
+<div id="ref-tonietal:2009">
+<p>Toni, Tina, David Welch, Natalja Strelkowa, Andreas Ipsen, and Michael P.H. Strumpf. 2009. “Approximate Bayesian Computation Scheme for Parameter Inference and Model Selection in Dynamical Systems.” <em>Journal of the Royal Society Interface</em> 6: 187–202.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="set-up-simple-simulation-model.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="example-abakaliki-smallpox-outbreak.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": null,
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": ["_main.pdf"],
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

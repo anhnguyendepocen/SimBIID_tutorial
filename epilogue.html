@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>6 Epilogue | Inference in infectious disease systems practicals</title>
+  <meta name="description" content="6 Epilogue | Inference in infectious disease systems practicals" />
+  <meta name="generator" content="bookdown 0.19 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="6 Epilogue | Inference in infectious disease systems practicals" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="6 Epilogue | Inference in infectious disease systems practicals" />
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="6 Epilogue | Inference in infectious disease systems practicals" />
+  
+  <meta name="twitter:description" content="6 Epilogue | Inference in infectious disease systems practicals" />
+  
+
+<meta name="author" content="TJ McKinley" />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="particle-mcmc.html"/>
+<link rel="next" href="references.html"/>
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+<script language="javascript"> 
+    function toggle(id) {
+        var ele = document.getElementById("toggleText" + id);
+        var text = document.getElementById("displayText" + id);
+        var buttonText = text.innerHTML.replace("Show ", "");
+        buttonText = buttonText.replace("Hide ", "");
+        if(ele.style.display == "block") {
+            ele.style.display = "none";
+            text.innerHTML = "Show " + buttonText;
+        } else {
+            ele.style.display = "block";
+            text.innerHTML = "Hide " + buttonText;
+        }
+    } 
+</script>
+
+<script language="javascript">
+    function openCode(evt, codeName, id) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent" + id);
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks" + id);
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(codeName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+</script>
+
+<script language="javascript">
+    function hide(id){
+        document.getElementById(id).style.display = "none";
+    }
+</script>
+</script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a><ul>
+<li class="chapter" data-level="1.1" data-path="index.html"><a href="index.html#installation"><i class="fa fa-check"></i><b>1.1</b> Installation</a><ul>
+<li class="chapter" data-level="1.1.1" data-path="index.html"><a href="index.html#windows"><i class="fa fa-check"></i><b>1.1.1</b> Windows</a></li>
+<li class="chapter" data-level="1.1.2" data-path="index.html"><a href="index.html#mac"><i class="fa fa-check"></i><b>1.1.2</b> Mac</a></li>
+<li class="chapter" data-level="1.1.3" data-path="index.html"><a href="index.html#linux"><i class="fa fa-check"></i><b>1.1.3</b> Linux</a></li>
+<li class="chapter" data-level="1.1.4" data-path="index.html"><a href="index.html#install-package"><i class="fa fa-check"></i><b>1.1.4</b> Install package</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html"><i class="fa fa-check"></i><b>2</b> Set up simple simulation model</a><ul>
+<li class="chapter" data-level="2.1" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#case-study"><i class="fa fa-check"></i><b>2.1</b> Case Study</a></li>
+<li class="chapter" data-level="2.2" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#set-up-simulation-model"><i class="fa fa-check"></i><b>2.2</b> Set up simulation model</a></li>
+<li class="chapter" data-level="2.3" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#using-tspan"><i class="fa fa-check"></i><b>2.3</b> Using <code>tspan</code></a></li>
+<li class="chapter" data-level="2.4" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#plotting-simulations"><i class="fa fa-check"></i><b>2.4</b> Plotting simulations</a></li>
+<li class="chapter" data-level="2.5" data-path="set-up-simple-simulation-model.html"><a href="set-up-simple-simulation-model.html#running-multiple-simulations"><i class="fa fa-check"></i><b>2.5</b> Running multiple simulations</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html"><i class="fa fa-check"></i><b>3</b> Approximate Bayesian Computation</a><ul>
+<li class="chapter" data-level="3.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-model"><i class="fa fa-check"></i><b>3.1</b> Simulation model</a></li>
+<li class="chapter" data-level="3.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#arguments-to-abcsmc-function"><i class="fa fa-check"></i><b>3.2</b> Arguments to <code>ABCSMC()</code> function</a><ul>
+<li class="chapter" data-level="3.2.1" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#summary-statistics"><i class="fa fa-check"></i><b>3.2.1</b> Summary statistics</a></li>
+<li class="chapter" data-level="3.2.2" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#priors"><i class="fa fa-check"></i><b>3.2.2</b> Prior distributions</a></li>
+<li class="chapter" data-level="3.2.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#simulation-function"><i class="fa fa-check"></i><b>3.2.3</b> Simulation function</a></li>
+<li class="chapter" data-level="3.2.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#inistates"><i class="fa fa-check"></i><b>3.2.4</b> Initial states</a></li>
+<li class="chapter" data-level="3.2.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#tolerances"><i class="fa fa-check"></i><b>3.2.5</b> Tolerances</a></li>
+</ul></li>
+<li class="chapter" data-level="3.3" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#running-abcsmc"><i class="fa fa-check"></i><b>3.3</b> Running <code>ABCSMC()</code></a></li>
+<li class="chapter" data-level="3.4" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#calculate-posterior-for-transformations-of-parameters"><i class="fa fa-check"></i><b>3.4</b> Calculate posterior for transformations of parameters</a></li>
+<li class="chapter" data-level="3.5" data-path="approximate-bayesian-computation.html"><a href="approximate-bayesian-computation.html#adding-additional-matching-criteria"><i class="fa fa-check"></i><b>3.5</b> Adding additional matching criteria</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html"><i class="fa fa-check"></i><b>4</b> Example: Abakaliki smallpox outbreak</a><ul>
+<li class="chapter" data-level="4.1" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#sir-model"><i class="fa fa-check"></i><b>4.1</b> SIR model</a></li>
+<li class="chapter" data-level="4.2" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#summary-statistics-1"><i class="fa fa-check"></i><b>4.2</b> Summary statistics</a></li>
+<li class="chapter" data-level="4.3" data-path="example-abakaliki-smallpox-outbreak.html"><a href="example-abakaliki-smallpox-outbreak.html#simulation-model-1"><i class="fa fa-check"></i><b>4.3</b> Simulation model</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="particle-mcmc.html"><a href="particle-mcmc.html"><i class="fa fa-check"></i><b>5</b> Particle MCMC</a><ul>
+<li class="chapter" data-level="5.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#arguments-for-pmcmc-function"><i class="fa fa-check"></i><b>5.1</b> Arguments for <code>PMCMC()</code> function</a><ul>
+<li class="chapter" data-level="5.1.1" data-path="particle-mcmc.html"><a href="particle-mcmc.html#data"><i class="fa fa-check"></i><b>5.1.1</b> Data</a></li>
+<li class="chapter" data-level="5.1.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#obsprocess"><i class="fa fa-check"></i><b>5.1.2</b> Observation process</a></li>
+</ul></li>
+<li class="chapter" data-level="5.2" data-path="particle-mcmc.html"><a href="particle-mcmc.html#running-the-pmcmc-algorithm"><i class="fa fa-check"></i><b>5.2</b> Running the PMCMC algorithm</a></li>
+<li class="chapter" data-level="5.3" data-path="particle-mcmc.html"><a href="particle-mcmc.html#optimising-the-number-of-particles"><i class="fa fa-check"></i><b>5.3</b> Optimising the number of particles</a></li>
+<li class="chapter" data-level="5.4" data-path="particle-mcmc.html"><a href="particle-mcmc.html#visualising-and-summarising-the-posterior-distributions"><i class="fa fa-check"></i><b>5.4</b> Visualising and summarising the posterior distributions</a></li>
+<li class="chapter" data-level="5.5" data-path="particle-mcmc.html"><a href="particle-mcmc.html#predictive-posterior-distributions"><i class="fa fa-check"></i><b>5.5</b> Predictive posterior distributions</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="epilogue.html"><a href="epilogue.html"><i class="fa fa-check"></i><b>6</b> Epilogue</a></li>
+<li class="chapter" data-level="7" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i><b>7</b> References</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Inference in infectious disease systems practicals</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="epilogue" class="section level1">
+<h1><span class="header-section-number">6</span> Epilogue</h1>
+<p>Hopefully these practicals have given you some insight into the types of appraoches that we can use in order to fit infectious disease models to real-data, and some understanding of the complexities involved. There are many other techniques available, each with their own advantages and disadvantages. Some key (but not exhaustive) references (with a focus on epidemic modelling) are:</p>
+<ul>
+<li><strong>Data-augmented MCMC</strong> <span class="citation">(e.g. Gibson and Renshaw <a href="#ref-gibson_renshaw:1998">1998</a>; O’Neill and Roberts <a href="#ref-oneill_roberts:1999">1999</a>; S. Cauchemez and Ferguson <a href="#ref-cauchemez_ferguson:2008">2008</a>; Jewell et al. <a href="#ref-jewelletal:2009a">2009</a>)</span></li>
+<li><strong>Sequential Monte Carlo</strong> <span class="citation">(Simon Cauchemez et al. <a href="#ref-cauchemezetal:2008">2008</a>)</span></li>
+<li><strong>Maximum likelihood via iterated filtering</strong> <span class="citation">(Ionides, Bretó, and King <a href="#ref-ionidesetal:2006">2006</a>)</span></li>
+<li><strong>Approximate Bayesian Computation</strong> <span class="citation">(e.g. Toni et al. <a href="#ref-tonietal:2009">2009</a>; McKinley, Cook, and Deardon <a href="#ref-mckinleyetal:2009">2009</a>; Conlan et al. <a href="#ref-conlanetal:2012">2012</a>; Brooks Pollock, Roberts, and Keeling <a href="#ref-brookspollocketal:2014">2014</a>)</span></li>
+<li><strong>Pseudo-marginal methods</strong> <span class="citation">(e.g. O’Neill et al. <a href="#ref-oneilletal:2000">2000</a>; Beaumont <a href="#ref-beaumont:2003">2003</a>; Andrieu and Roberts <a href="#ref-andrieu_roberts:2009">2009</a>; McKinley et al. <a href="#ref-mckinleyetal:2014">2014</a>)</span></li>
+<li><strong>Particle MCMC </strong><span class="citation">(Andrieu, Doucet, and Holenstein <a href="#ref-andrieuetal:2010">2010</a>; Drovandi, Pettitt, and McCutchan <a href="#ref-drovandietal:2016">2016</a>)</span></li>
+<li><strong>Synthetic likelihood</strong> <span class="citation">(Wood <a href="#ref-wood:2010">2010</a>)</span></li>
+<li><strong>History Matching and emulation</strong> <span class="citation">(Andrianakis et al. <a href="#ref-andrianakisetal:2015">2015</a>; McKinley et al. <a href="#ref-mckinleyetal:2018">2018</a>)</span></li>
+<li><strong>Bayesian Optimization for Likelihood-Free Inference of simulator-based statistical models (BOLFI)</strong> <span class="citation">(Gutmann and Corander <a href="#ref-gutmann_corander:2016">2016</a>)</span></li>
+</ul>
+<p>Some other important points to remember:</p>
+<ul>
+<li><em>Here we have use small numbers of particles in our ABC-SMC routines so that we can feasibly run the practicals in time. If you use these techniques in your own research make sure that you use a much larger number of particles to produce more accurate estimates.</em></li>
+<li><em>The same goes for the number of iterations for the PMCMC chains. In practice you will need to run for much longer to properly assess convergence and mixing.</em></li>
+</ul>
+
+</div>
+<h3> References</h3>
+<div id="refs" class="references">
+<div id="ref-andrianakisetal:2015">
+<p>Andrianakis, Ioannis, Ian Vernon, Nicky McCreesh, Trevelyan J. McKinley, Jeremy E. Oakley, Rebecca N. Nsubuga, Michael Goldstein, and Richard G. White. 2015. “Bayesian History Matching of Complex Infectious Disease Models Using Emulation: A Tutorial and a Case Study on Hiv in Uganda.” <em>PLoS Computational Biology</em> 11 (1): e1003968.</p>
+</div>
+<div id="ref-andrieuetal:2010">
+<p>Andrieu, Christophe, Arnaud Doucet, and Roman Holenstein. 2010. “Particle Markov Chain Monte Carlo Methods.” <em>Journal of the Royal Statistical Society, Series B (Methodological)</em> 72 (3): 269–342.</p>
+</div>
+<div id="ref-andrieu_roberts:2009">
+<p>Andrieu, Christophe, and Gareth O. Roberts. 2009. “The Pseudo-Marginal Approach for Efficient Monte Carlo Simulation.” <em>The Annals of Statistics</em> 37 (2): 697–725.</p>
+</div>
+<div id="ref-beaumont:2003">
+<p>Beaumont, Mark A. 2003. “Estimation of Population Growth and Decline in Genetically Monitored Populations.” <em>Genetics</em> 164: 1139–60.</p>
+</div>
+<div id="ref-brookspollocketal:2014">
+<p>Brooks Pollock, Ellen, Gareth O. Roberts, and Matt J. Keeling. 2014. “A Dynamic Model of Bovine Tuberculosis Spread and Control in Great Britain.” <em>Nature</em> 511: 228–31. <a href="https://doi.org/10.1038/nature13529" class="uri">https://doi.org/10.1038/nature13529</a>.</p>
+</div>
+<div id="ref-cauchemez_ferguson:2008">
+<p>Cauchemez, S., and Neil M. Ferguson. 2008. “Likelihood-Based Estimation of Continuous-Time Epidemic Models from Time-Series Data: Application to Measles Transmission in London.” <em>Journal of the Royal Society Interface</em> 5 (25): 885–97.</p>
+</div>
+<div id="ref-cauchemezetal:2008">
+<p>Cauchemez, Simon, Alain-Jacques Valleron, Pierre-Yves Boëlle, Antoine Flahault, and Neil M. Ferguson. 2008. “Estimating the Impact of School Closure on Influenza Transmission from Sentinel Data.” <em>Nature</em> 452: 750–55. <a href="https://doi.org/10.1038/nature06732" class="uri">https://doi.org/10.1038/nature06732</a>.</p>
+</div>
+<div id="ref-conlanetal:2012">
+<p>Conlan, Andrew J. K., Trevelyan J. McKinley, Katerina Karolemeas, Ellen Brooks Pollock, Anthony V. Goodchild, Andrew P. Mitchell, Colin P. D. Birch, Richard S. Clifton-Hadley, and James L. N. Wood. 2012. “Estimating the Hidden Burden of Bovine Tuberculosis in Great Britain.” <em>PLoS Computational Biology</em> 8 (10): e1002730.</p>
+</div>
+<div id="ref-drovandietal:2016">
+<p>Drovandi, Christopher C., Anthony N. Pettitt, and Roy A. McCutchan. 2016. “Exact and Approximate Bayesian Inference for Low Integer-Values Time Series Models with Intractable Likelihoods.” <em>Bayesian Analysis</em> 11 (2): 325–52.</p>
+</div>
+<div id="ref-gibson_renshaw:1998">
+<p>Gibson, Gavin J., and Eric Renshaw. 1998. “Estimating Parameters in Stochastic Compartmental Models Using Markov Chain Methods.” <em>IMA Journal of Mathematics Applied in Medicine and Biology</em> 15: 19–40.</p>
+</div>
+<div id="ref-gutmann_corander:2016">
+<p>Gutmann, Michael U., and Jukka Corander. 2016. “Bayesian Optimization for Likelihood-Free Inference of Simulator-Based Statistical Models.” <em>Journal of Machine Learning Research</em> 17: 1–47.</p>
+</div>
+<div id="ref-ionidesetal:2006">
+<p>Ionides, E.L., C. Bretó, and A.A. King. 2006. “Inference for Nonlinear Dynamical Systems.” <em>Proceedings of the National Academy of Sciences USA</em> 103: 18438–43.</p>
+</div>
+<div id="ref-jewelletal:2009a">
+<p>Jewell, Chris P., Theodore Kypraios, Peter Neal, and Gareth O. Roberts. 2009. “Bayesian Analysis for Emerging Infectious Diseases.” <em>Bayesian Analysis</em> 4 (4): 465–96.</p>
+</div>
+<div id="ref-mckinleyetal:2009">
+<p>McKinley, Trevelyan J., Alex R. Cook, and Robert Deardon. 2009. “Inference in Epidemic Models Without Likelihoods.” <em>The International Journal of Biostatistics</em> 5 (1). <a href="https://doi.org/10.2202/1557-4679.1171" class="uri">https://doi.org/10.2202/1557-4679.1171</a>.</p>
+</div>
+<div id="ref-mckinleyetal:2014">
+<p>McKinley, Trevelyan J., Joshua V. Ross, Rob Deardon, and Alex R. Cook. 2014. “Simulation-Based Bayesian Inference for Epidemic Models.” <em>Computational Statistics and Data Analysis</em> 71: 434–47.</p>
+</div>
+<div id="ref-mckinleyetal:2018">
+<p>McKinley, Trevelyan J., Ian Vernon, Ioannis Andrianakis, Nicky McCreesh, Jeremy E. Oakley, Rebecca N. Nsubuga, Michael Goldstein, and Richard G. White. 2018. “Approximate Bayesian Computation and Simulation-Based Inference for Complex Stochastic Epidemic Models.” <em>Statistical Science</em> 33 (1): 4–18. <a href="https://doi.org/10.1214/17-STS618" class="uri">https://doi.org/10.1214/17-STS618</a>.</p>
+</div>
+<div id="ref-oneilletal:2000">
+<p>O’Neill, P.D., D.J. Balding, N.G. Becker, M. Eerola, and D. Mollison. 2000. “Analyses of Infectious Disease Data from Household Outbreaks by Markov Chain Monte Carlo Methods.” <em>Applied Statistics</em> 49: 517–42.</p>
+</div>
+<div id="ref-oneill_roberts:1999">
+<p>O’Neill, Philip D., and Gareth O. Roberts. 1999. “Bayesian Inference for Partially Observed Stochastic Epidemics.” <em>Journal of the Royal Statistical Society. Series A (General)</em> 162: 121–29.</p>
+</div>
+<div id="ref-tonietal:2009">
+<p>Toni, Tina, David Welch, Natalja Strelkowa, Andreas Ipsen, and Michael P.H. Strumpf. 2009. “Approximate Bayesian Computation Scheme for Parameter Inference and Model Selection in Dynamical Systems.” <em>Journal of the Royal Society Interface</em> 6: 187–202.</p>
+</div>
+<div id="ref-wood:2010">
+<p>Wood, Simon N. 2010. “Statistical Inference for Noisy Nonlinear Ecological Dynamic Systems.” <em>Nature</em> 466: 1102–4.</p>
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="particle-mcmc.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="references.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": null,
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": ["_main.pdf"],
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
