@@ -138,7 +138,7 @@ priors$p2 <- c(10^4, 10^2)
 ```
 
 ```{task}
-Run 3 generations of the sequential ABC routine of [@tonietal:2009] using starting tolerances of $\epsilon = 50$ and `ptol = 0.2`.
+Run 5 generations of the sequential ABC routine of [@tonietal:2009] using starting tolerances of $\epsilon = 50$ and `ptols = 0.2`.
 ```
 
 ```{solution}
@@ -157,8 +157,8 @@ post <- ABCSMC(
     func = simSIR, 
     u = iniStates, 
     tols = tols, 
-    ptol = 0.2, 
-    ngen = 3, 
+    ptols = 0.2, 
+    ngen = 5, 
     npart = 50,
     parallel = T, 
     model = model

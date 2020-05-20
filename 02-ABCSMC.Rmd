@@ -166,7 +166,7 @@ tols <- c(finalsize = 50, finaltime = 50)
 
 ## Running `ABCSMC()`
 
-Now let's run the routine for `ngen = 4` generations of ABC, with `ptols = 0.5` using `npart = 50` particles. Notice that we can pass the additional arguments that `simFlu()` needs (`model` in this case) as additional arguments passed to `ABCSMC()`:
+Now let's run the routine for `ngen = 4` generations of ABC, with `ptols = 0.2` using `npart = 50` particles. Notice that we can pass the additional arguments that `simFlu()` needs (`model` in this case) as additional arguments passed to `ABCSMC()`:
 
 ```{r, abc-abc}
 ## run ABC-SMC algorithm
@@ -176,7 +176,7 @@ post <- ABCSMC(
     func = simFlu, 
     u = iniStates, 
     tols = tols, 
-    ptol = 0.5,
+    ptols = 0.2,
     ngen = 4,
     npart = 50,
     model = model
@@ -202,7 +202,7 @@ Given the speed of the simulations, let's try running for a few more generations
 
 ```{r, abc-abc1, fig.width = 8, fig.height = 4, out.width = "80%"}
 ## run for a few more generations
-post <- ABCSMC(x = post, ptols = 0.5, ngen = 3, parallel = T)
+post <- ABCSMC(x = post, ptols = 0.2, ngen = 3, parallel = T)
 ```
 
 `r ifelse(opts_knit$get("rmarkdown.pandoc.to") == "latex", "\\newpage", "")`
@@ -360,7 +360,7 @@ post <- ABCSMC(
     u = iniStates, 
     npart = 50,
     tols = tols,
-    ptols = 0.5,
+    ptols = 0.2,
     ngen = 3, 
     parallel = T,
     model = model, tspan = flu$day, R = flu$in_bed
@@ -379,6 +379,6 @@ plot(post)
 plot(post, "output")
 ```
 
-Notice that the $S_R$ metrics don't get very close to 0 here. This is because the metric is a **one-sided** metric and so we always expect some variability away from zero. Due to the stochastic nature of the model, to get a metric close to zero we would have to match almost all time points exactly, which would be very computationally expensive. Hence we use this to tweak the outputs, but most of the variability is being constrained by the `finaltime` and `finalsize` metrics here. However, we can see that the addition of the $S_R$ metric seems to tighten up the posterior for $\gamma_1$. Why is this do you think? Ideally you would want to run for more generations to tighten up each of these outputs.
+Notice that the $S_R$ metric doesn't get very close to 0 here. This is because the metric is a **one-sided** metric and so we always expect some variability away from zero. Due to the stochastic nature of the model, to get a metric close to zero we would have to match almost all time points exactly, which would be very computationally expensive. Hence we use this to tweak the outputs, but most of the variability is being constrained by the `finaltime` and `finalsize` metrics here. However, we can see that the addition of the $S_R$ metric seems to tighten up the posterior for $\gamma_1$. Why is this do you think? Ideally you would want to run for more generations to tighten up each of these outputs.
 
 > **Remember: here we have used a low number of particles to speed things up. In practice you would want to use many more to ensure better approximations.**
